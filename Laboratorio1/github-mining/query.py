@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Lab01S01 — Flavio de Souza Ferreira Jr e Luidi Cadete
-Coleta GraphQL dos campos das RQ01, RQ02 e RQ06.
+Coleta GraphQL dos campos das RQ01 a RQ06.
 
 Uso:
   # Coloque o token em .env (GITHUB_TOKEN=...) ou exporte no shell
   python3 query.py                 # amostra padrão (10)
   python3 query.py --limit 10      # validação individual
-  python3 query.py --limit 100     # integração S01 (após unir as RQs)
+  python3 query.py --limit 100     # coleta definitiva S01
 
 Requisitos:
   - Token com permissão de leitura pública (classic: public_repo ou fine-grained: Contents read)
@@ -30,6 +30,8 @@ from typing import Any
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 DEFAULT_LIMIT = 10
+RELEASES_IN_PRIMARY_QUERY_LIMIT = 10
+RELEASES_BATCH_SIZE = 10
 BASE_DIR = Path(__file__).resolve().parent
 QUERY_FILE = BASE_DIR / "queries" / "rq01_rq02_rq06.graphql"
 OUTPUT_DIR = BASE_DIR / "output"
@@ -66,6 +68,9 @@ class RepoMetrics:
     stargazer_count: int
     created_at: str
     merged_pull_requests: int
+    releases_count: int
+    updated_at: str
+    primary_language: str | None
     issues_total: int
     issues_closed: int
 
@@ -149,6 +154,9 @@ def parse_repositories(data: dict[str, Any]) -> list[RepoMetrics]:
                 stargazer_count=int(node["stargazerCount"]),
                 created_at=node["createdAt"],
                 merged_pull_requests=int(node["mergedPullRequests"]["totalCount"]),
+                releases_count=int(node["releases"]["totalCount"]),
+                updated_at=node["updatedAt"],
+                primary_language=(node.get("primaryLanguage") or {}).get("name"),
                 issues_total=int(node["issues"]["totalCount"]),
                 issues_closed=int(node["closedIssues"]["totalCount"]),
             )
@@ -157,10 +165,41 @@ def parse_repositories(data: dict[str, Any]) -> list[RepoMetrics]:
     return repos
 
 
+def release_counts_query(names_with_owner: list[str]) -> str:
+    """Monta uma consulta GraphQL para um lote pequeno de contagens de releases."""
+    fields: list[str] = []
+    for index, name_with_owner in enumerate(names_with_owner):
+        owner, name = name_with_owner.split("/", 1)
+        fields.append(
+            f"repo_{index}: repository(owner: {json.dumps(owner)}, name: {json.dumps(name)}) "
+            "{ releases(first: 1) { totalCount } }"
+        )
+    return "query ReleaseCounts { " + " ".join(fields) + " }"
+
+
+def fetch_release_counts(names_with_owner: list[str], token: str) -> dict[str, int]:
+    """Obtém RQ03 em lotes para evitar timeout do GitHub ao consultar 100 conexões."""
+    counts: dict[str, int] = {}
+    for start in range(0, len(names_with_owner), RELEASES_BATCH_SIZE):
+        batch = names_with_owner[start : start + RELEASES_BATCH_SIZE]
+        data = graphql_request(release_counts_query(batch), {}, token)
+        for index, name_with_owner in enumerate(batch):
+            repository = data.get(f"repo_{index}")
+            if repository is None:
+                print(
+                    f"Erro: repositório não encontrado ao coletar RQ03: {name_with_owner}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            counts[name_with_owner] = int(repository["releases"]["totalCount"])
+    return counts
+
+
 def print_validation_table(repos: list[RepoMetrics]) -> None:
     header = (
         f"{'#':<3} {'repositório':<36} {'stars':>8} {'idade_d':>9} "
-        f"{'PRs_M':>7} {'issues':>7} {'fechadas':>8} {'%fech':>7}"
+        f"{'PRs_M':>7} {'releases':>9} {'atualizado':<20} {'linguagem':<16} "
+        f"{'issues':>7} {'fechadas':>8} {'%fech':>7}"
     )
     print(header)
     print("-" * len(header))
@@ -171,7 +210,9 @@ def print_validation_table(repos: list[RepoMetrics]) -> None:
         print(
             f"{index:<3} {repo.name_with_owner:<36} {repo.stargazer_count:>8} "
             f"{repo.age_days:>9.0f} {repo.merged_pull_requests:>7} "
-            f"{repo.issues_total:>7} {repo.issues_closed:>8} {ratio_txt:>7}"
+            f"{repo.releases_count:>9} {repo.updated_at:<20.19} "
+            f"{(repo.primary_language or 'n/a'):<16.16} {repo.issues_total:>7} "
+            f"{repo.issues_closed:>8} {ratio_txt:>7}"
         )
 
 
@@ -187,6 +228,10 @@ def validate_sample(repos: list[RepoMetrics]) -> list[str]:
             problems.append(f"{repo.name_with_owner}: createdAt ausente (RQ01).")
         if repo.merged_pull_requests < 0:
             problems.append(f"{repo.name_with_owner}: PRs merged inválido (RQ02).")
+        if repo.releases_count < 0:
+            problems.append(f"{repo.name_with_owner}: releases inválido (RQ03).")
+        if not repo.updated_at:
+            problems.append(f"{repo.name_with_owner}: updatedAt ausente (RQ04).")
         if repo.issues_closed > repo.issues_total:
             problems.append(
                 f"{repo.name_with_owner}: issues fechadas ({repo.issues_closed}) "
@@ -198,8 +243,8 @@ def validate_sample(repos: list[RepoMetrics]) -> list[str]:
     return problems
 
 
-OWNER_NAME = "Flavio de Souza Ferreira Jr"
-OWNER_SLUG = "flavio"
+OWNER_NAME = "Luidi Cadete"
+OWNER_SLUG = "luidi"
 AMOSTRA_FILE = f"amostra_10_{OWNER_SLUG}.json"
 COLETA_FILE = "coleta_100.json"
 
@@ -210,7 +255,7 @@ def output_path_for(limit: int) -> Path:
         return OUTPUT_DIR / AMOSTRA_FILE
     if limit == 100:
         return OUTPUT_DIR / COLETA_FILE
-    return OUTPUT_DIR / f"rq01_rq02_rq06_limit{limit}.json"
+    return OUTPUT_DIR / f"popular_repos_limit{limit}.json"
 
 
 def save_json(repos: list[RepoMetrics], limit: int) -> Path:
@@ -221,7 +266,7 @@ def save_json(repos: list[RepoMetrics], limit: int) -> Path:
     payload = {
         "sprint": "Lab01S01",
         "owner": OWNER_NAME,
-        "rqs": ["RQ01", "RQ02", "RQ06"],
+        "rqs": ["RQ01", "RQ02", "RQ03", "RQ04", "RQ05", "RQ06"],
         "kind": kind,
         "limit": limit,
         "collected_at": datetime.now(timezone.utc).isoformat(),
@@ -244,7 +289,7 @@ def save_json(repos: list[RepoMetrics], limit: int) -> Path:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Lab01S01 Flavio de Souza Ferreira Jr — coleta GraphQL RQ01, RQ02 e RQ06"
+        description="Lab01S01 — coleta GraphQL dos dados das RQ01 a RQ06"
     )
     parser.add_argument(
         "--limit",
@@ -268,10 +313,30 @@ def parse_args() -> argparse.Namespace:
 def run_collection(limit: int, *, save: bool) -> list[RepoMetrics]:
     token = load_token()
     query = load_query()
-    data = graphql_request(query, {"first": limit}, token)
-    repos = parse_repositories(data)
+    include_releases = limit <= RELEASES_IN_PRIMARY_QUERY_LIMIT
+    data = graphql_request(
+        query,
+        {"first": limit, "includeReleases": include_releases},
+        token,
+    )
 
-    print(f"\n=== limit={limit} | coletados={len(repos)} | RQs: 01, 02, 06 ===\n")
+    if include_releases:
+        repos = parse_repositories(data)
+    else:
+        names = [
+            node["nameWithOwner"]
+            for node in (data.get("search", {}).get("nodes") or [])
+            if node and "nameWithOwner" in node
+        ]
+        release_counts = fetch_release_counts(names, token)
+        for node in data.get("search", {}).get("nodes") or []:
+            if node and "nameWithOwner" in node:
+                node["releases"] = {
+                    "totalCount": release_counts[node["nameWithOwner"]]
+                }
+        repos = parse_repositories(data)
+
+    print(f"\n=== limit={limit} | coletados={len(repos)} | RQs: 01, 02, 03, 04, 05, 06 ===\n")
     print_validation_table(repos)
 
     problems = validate_sample(repos)
