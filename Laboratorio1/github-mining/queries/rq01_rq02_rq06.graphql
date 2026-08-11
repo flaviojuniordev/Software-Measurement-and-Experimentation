@@ -1,0 +1,38 @@
+# Lab01S01 — Flavio de Souza Ferreira Jr
+# RQs cobertas nesta query:
+#   RQ01 → createdAt
+#   RQ02 → pullRequests(states: MERGED).totalCount
+#   RQ06 → issues.totalCount + issues(states: CLOSED).totalCount
+#
+# Variável $first: tamanho da amostra (5–10 na validação; 100 na integração S01).
+# Ordenação: repositórios públicos com mais estrelas.
+
+query PopularReposRQ01RQ02RQ06($first: Int!) {
+  search(query: "stars:>1 sort:stars-desc", type: REPOSITORY, first: $first) {
+    repositoryCount
+    nodes {
+      ... on Repository {
+        nameWithOwner
+        url
+        stargazerCount
+
+        # RQ01 — idade (calculada depois a partir de createdAt)
+        createdAt
+
+        # RQ02 — contribuição externa (PRs aceitas)
+        mergedPullRequests: pullRequests(states: MERGED) {
+          totalCount
+        }
+
+        # RQ06 — percentual de issues fechadas
+        # (razão = closed / total; calculada depois pelo script)
+        issues {
+          totalCount
+        }
+        closedIssues: issues(states: CLOSED) {
+          totalCount
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Token e saídas locais — não versionar
+.env
+output/
+__pycache__/
+*.pyc
+.DS_Store
