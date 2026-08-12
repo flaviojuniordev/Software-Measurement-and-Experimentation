@@ -1,6 +1,10 @@
-# Token e saídas locais — não versionar
+# Token e artefatos locais — não versionar
 .env
-output/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Evidências entregáveis da Sprint 1
+output/*
+!output/amostra_10_luidi.json
+!output/coleta_100.json

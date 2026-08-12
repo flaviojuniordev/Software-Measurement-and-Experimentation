@@ -1,6 +1,6 @@
-# Lab01S01 — Flavio de Souza Ferreira Jr (RQ01 + RQ02 + RQ06)
+# Lab01S01 — Flavio de Souza Ferreira Jr e Luidi Cadete (RQ01–RQ06)
 
-Parte individual da sprint: extrair via **GraphQL própria** os dados necessários às RQs 01, 02 e 06, validar em amostra de **5–10** repositórios e deixar pronto para integração no script único do grupo.
+Script único da sprint para extrair via **GraphQL própria** os dados necessários às RQs 01–06 e validar em uma amostra de **5–10** repositórios antes da coleta definitiva de 100 repositórios.
 
 ## O que esta parte coleta
 
@@ -8,6 +8,9 @@ Parte individual da sprint: extrair via **GraphQL própria** os dados necessári
 |---|---|---|
 | **RQ01** | Repos populares são maduros/antigos? | `createdAt` (+ idade em dias no script) |
 | **RQ02** | Recebem muita contribuição externa? | `pullRequests(states: MERGED).totalCount` |
+| **RQ03** | Lançam releases com frequência? | `releases.totalCount` |
+| **RQ04** | São atualizados com frequência? | `updatedAt` |
+| **RQ05** | São escritos nas linguagens mais populares? | `primaryLanguage.name` |
 | **RQ06** | Alto % de issues fechadas? | `issues.totalCount` e `issues(states: CLOSED).totalCount` |
 
 A razão da RQ06 e a análise estatística completa ficam para sprints seguintes. Aqui o foco é **coleta correta + validação rápida**.
@@ -20,7 +23,7 @@ github-mining/
 ├── queries/rq01_rq02_rq06.graphql    # query escrita pelo grupo (parte I1)
 ├── .env.example
 ├── .gitignore
-└── output/                           # JSON gerado localmente (ignorado no git)
+└── output/                           # evidências JSON da S01 (amostra e coleta final)
 ```
 
 ## Pré-requisito
@@ -37,25 +40,28 @@ export GITHUB_TOKEN=ghp_seu_token
 ```bash
 cd Laboratorio1/github-mining
 
-# gera os dois arquivos de uma vez
+# gera os dois arquivos de uma vez (a amostra é de Luidi)
 python3 query.py --both
 
 # ou separado
-python3 query.py --limit 10    # → output/amostra_10_flavio.json
+python3 query.py --limit 10    # → output/amostra_10_luidi.json
 python3 query.py --limit 100   # → output/coleta_100.json
 ```
 
 | Arquivo | Uso |
 |---|---|
-| `output/amostra_10_flavio.json` | Validação manual de Flavio (RQ01/02/06) |
-| `output/amostra_10_luidi.json` | Validação manual de Luidi (RQ03/04/05) — quando ele fizer a parte dele |
+| `output/amostra_10_flavio.json` | Validação manual de Flavio (RQ01/02/06) já realizada |
+| `output/amostra_10_luidi.json` | Validação manual de Luidi (RQ03/04/05) |
 | `output/coleta_100.json` | Coleta definitiva da S01 (todos os campos, após integração) |
 
-## Integração (depois, com Luidi Cadete)
+## RQs e responsáveis
 
-1. Unir os campos das RQ03/RQ04/RQ05 na mesma query GraphQL.
-2. Rodar com `--limit 100` no script único do grupo.
-3. Paginação para 1.000 repositórios fica para **Lab01S02**.
+- Flavio de Souza Ferreira Jr: RQ01, RQ02 e RQ06.
+- Luidi Cadete: RQ03, RQ04 e RQ05.
+
+O script e a query já reúnem todas as RQs da S01. Paginação para 1.000 repositórios fica para **Lab01S02**.
+
+Para não exceder o tempo de resposta do GitHub ao calcular `releases.totalCount` de 100 repositórios, a coleta definitiva busca a lista de 100 uma única vez e complementa somente as contagens de releases em lotes GraphQL de 10. A amostra de 10 usa a query completa diretamente. Não há paginação de repositórios.
 
 ## Commits
 
