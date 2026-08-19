@@ -1,0 +1,151 @@
+# Validação Lab01S02 - Luidi Cadete
+
+Base analisada: `coleta_1000.csv` (1000 repositórios).
+Análise feita exclusivamente sobre o CSV, sem nova consulta à API do GitHub.
+
+## 1. Hipóteses informais
+
+- **RQ03:** repositórios populares tendem a publicar releases, mas projetos de documentação e listas devem concentrar parte relevante dos valores zero.
+- **RQ04:** a maioria dos repositórios populares deve apresentar atualização recente, especialmente dentro dos últimos 90 dias.
+- **RQ05:** as linguagens primárias devem se concentrar nas linguagens destacadas pelo GitHub Octoverse 2025, com forte presença de TypeScript, Python e JavaScript.
+- **RQ07:** as medianas de contribuições, releases e tempo desde a atualização devem variar entre linguagens; linguagens frequentes e ligadas a projetos ativos tendem a ter mais PRs, mais releases e atualização mais recente.
+
+## 2. Resultados
+
+### RQ03 - Releases
+
+- Valores válidos: 1000; inválidos/ausentes: 0.
+- Estatísticas: mediana 40; média 127,61; mínimo 0; máximo 1.000.
+- Repositórios com zero releases: 278 (27.8%).
+- Top 10 repositórios com mais releases:
+  1. BerriAI/litellm: 1.000
+  2. CopilotKit/CopilotKit: 1.000
+  3. RocketChat/Rocket.Chat: 1.000
+  4. TanStack/query: 1.000
+  5. chakra-ui/chakra-ui: 1.000
+  6. electron/electron: 1.000
+  7. frappe/erpnext: 1.000
+  8. ggml-org/llama.cpp: 1.000
+  9. gradio-app/gradio: 1.000
+  10. home-assistant/core: 1.000
+- Outliers superiores pelo critério de 1,5 x IQR: 92 valores acima de 373,12 releases.
+- Outliers mais relevantes: langchain-ai/langchain (1.000); vercel/next.js (1.000); ggml-org/llama.cpp (1.000); electron/electron (1.000); storybookjs/storybook (1.000).
+- Atenção: 21 repositórios atingem exatamente o máximo observado de 1.000 releases; esse agrupamento no limite deve ser interpretado com cautela como possível saturação da métrica de origem.
+
+### RQ04 - Atualização
+
+- Valores válidos: 1000; inválidos/ausentes: 0.
+- Estatísticas em dias: mediana 0,05; média 0,14; mínimo 0; máximo 2,81.
+- Atualizados nos últimos 7 dias: 1000 (100.0%).
+- Atualizados nos últimos 30 dias: 1000 (100.0%).
+- Atualizados nos últimos 90 dias: 1000 (100.0%).
+- Sem atualização há mais de 1 ano: 0 (0.0%).
+- As faixas de 7, 30 e 90 dias são cumulativas.
+- Top 10 repositórios há mais tempo sem atualização:
+  1. alibaba/easyexcel: 2,81 dias
+  2. nativefier/nativefier: 1,77 dias
+  3. Blankj/AndroidUtilCode: 1,74 dias
+  4. adobe/brackets: 1,71 dias
+  5. babysor/MockingBird: 1,64 dias
+  6. aymericdamien/TensorFlow-Examples: 1,62 dias
+  7. bailicangdu/vue2-elm: 1,47 dias
+  8. shadowsocks/shadowsocks: 1,47 dias
+  9. lysine-dev/retrofit: 1,18 dias
+  10. AFNetworking/AFNetworking: 1,15 dias
+- Outliers superiores pelo critério de 1,5 x IQR: 116 valores acima de 0,36 dias.
+- Outliers mais relevantes: alibaba/easyexcel (2,81 dias); nativefier/nativefier (1,77 dias); Blankj/AndroidUtilCode (1,74 dias); adobe/brackets (1,71 dias); babysor/MockingBird (1,64 dias).
+
+### RQ05 - Linguagem primária
+
+- Repositórios sem linguagem detectada: 87 (8.7%).
+- Repositórios com linguagem detectada: 913.
+- Valores vazios foram classificados como **Sem linguagem detectada**.
+- Ranking das linguagens mais frequentes:
+  1. Python: 228
+  2. TypeScript: 174
+  3. JavaScript: 111
+  4. Sem linguagem detectada: 87
+  5. Go: 76
+  6. Rust: 57
+  7. C++: 41
+  8. Java: 41
+  9. Jupyter Notebook: 24
+  10. C: 21
+  11. Shell: 20
+  12. Ruby: 13
+  13. HTML: 11
+  14. Swift: 10
+  15. Kotlin: 9
+  16. C#: 8
+  17. CSS: 8
+  18. Dart: 6
+  19. Vue: 6
+  20. Markdown: 5
+  21. MDX: 4
+  22. Clojure: 4
+  23. PHP: 4
+  24. Vim Script: 3
+  25. Zig: 3
+  26. Dockerfile: 2
+  27. Scala: 2
+  28. PowerShell: 2
+  29. Makefile: 2
+  30. Haskell: 2
+  31. Astro: 2
+  32. TeX: 2
+  33. Batchfile: 1
+  34. Blade: 1
+  35. Roff: 1
+  36. Assembly: 1
+  37. Nunjucks: 1
+  38. Julia: 1
+  39. Lua: 1
+  40. Svelte: 1
+  41. LLVM: 1
+  42. V: 1
+  43. Elixir: 1
+  44. Objective-C: 1
+- Referência: GitHub Octoverse 2025. O ranking por contribuidores coloca TypeScript, Python e JavaScript nas três primeiras posições, seguido por Java e C#; o top 10 também inclui PHP, Shell, C++, HCL e Go.
+- Fonte: https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/
+- Entre os repositórios com linguagem detectada, 703 (77.0%) usam uma linguagem do top 10 do Octoverse 2025.
+
+### RQ07 - Comparação por linguagem
+
+Foram incluídas somente linguagens com pelo menos 10 repositórios e registros válidos nas três métricas. Registros sem linguagem foram excluídos desta comparação.
+
+| Linguagem | Repositórios | Mediana de PRs aceitas | Mediana de releases | Mediana de dias desde atualização |
+|---|---:|---:|---:|---:|
+| Python | 228 | 559,50 | 20,50 | 0,03 |
+| TypeScript | 174 | 2.001,50 | 135 | 0,04 |
+| JavaScript | 111 | 617 | 39 | 0,07 |
+| Go | 76 | 1.694 | 140,50 | 0,05 |
+| Rust | 57 | 2.495 | 90 | 0,04 |
+| C++ | 41 | 1.156 | 55 | 0,06 |
+| Java | 41 | 941 | 55 | 0,09 |
+| Jupyter Notebook | 24 | 78 | 0 | 0,04 |
+| C | 21 | 294 | 45 | 0,03 |
+| Shell | 20 | 389,50 | 9,50 | 0,03 |
+| Ruby | 13 | 6.253 | 28 | 0,12 |
+| HTML | 11 | 232 | 0 | 0,09 |
+| Swift | 10 | 702,50 | 38,50 | 0,04 |
+
+Leitura das cinco linguagens mais frequentes:
+- Python (228 repositórios), TypeScript (174 repositórios), JavaScript (111 repositórios), Go (76 repositórios), Rust (57 repositórios).
+- Rust apresenta a maior mediana de PRs aceitas nesse grupo (2.495).
+- Go apresenta a maior mediana de releases (140,50).
+- Python apresenta a atualização mediana mais recente (0,03 dias).
+- As diferenças são descritivas e não demonstram que a linguagem causa maior atividade.
+
+## 3. Valores ausentes e outliers
+
+- Problemas numéricos encontrados: 0.
+- Linguagem ausente não causa erro: os 87 casos foram mantidos como **Sem linguagem detectada**.
+- Releases e tempo sem atualização possuem distribuições assimétricas; por isso, as medianas representam melhor o comportamento típico que as médias.
+- Os outliers foram preservados no relatório, pois podem representar projetos antigos, projetos com publicação intensa ou diferenças reais de processo.
+
+## 4. Conclusão
+
+- **RQ03:** os dados sustentam a hipótese de que a maioria dos repositórios populares publica releases.
+- **RQ04:** os dados sustentam a hipótese de atualização frequente, considerando o limite de 90 dias.
+- **RQ05:** os dados sustentam a hipótese de concentração nas linguagens populares do Octoverse 2025.
+- **RQ07:** há diferenças entre as medianas por linguagem, mas a comparação é descritiva e não permite concluir causalidade.

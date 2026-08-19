@@ -9,6 +9,7 @@ output/*
 !output/amostra_10_luidi.json
 !output/coleta_100.json
 !output/coleta_1000.csv
+!output/validacao_luidi_s02.txt
 snapshots/*
 !snapshots/.gitkeep
 !snapshots/lab01s02_project_snapshot.csv
