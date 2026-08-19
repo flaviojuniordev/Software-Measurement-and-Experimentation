@@ -4,7 +4,11 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# Evidências entregáveis da Sprint 1
+# Evidências entregáveis das sprints
 output/*
 !output/amostra_10_luidi.json
 !output/coleta_100.json
+!output/coleta_1000.csv
+snapshots/*
+!snapshots/.gitkeep
+!snapshots/lab01s02_project_snapshot.csv
