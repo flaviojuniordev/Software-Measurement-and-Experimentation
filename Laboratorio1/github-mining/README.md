@@ -96,6 +96,30 @@ O CSV deve ser conferido especialmente nestes pontos:
 
 Valores vazios em `closed_issues_ratio` sao esperados quando o repositorio nao possui issues; nesses casos nao existe denominador para calcular a razao.
 
+## Sprints 2 e 3
+
+Para a coleta paginada da Sprint 2, execute:
+
+```bash
+python3 query.py --limit 1000
+```
+
+A interface principal do Lab01 e um site local. Ela concentra a coleta, o acompanhamento de log, as RQs, a busca pelos repositorios, a comparacao por linguagem, os graficos da Sprint 3 e o snapshot do GitHub Projects.
+
+```bash
+python3 web_lab01.py
+```
+
+Abra `http://127.0.0.1:8000` no navegador. Na aba `S03 - Analise`, o botao de analise gera os resultados e os tres graficos de RQ01, RQ02 e RQ06 em `output/sprint3/`, prontos para o relatorio.
+
+```text
+github-mining/
+├── web_lab01.py                      # servidor local da interface web
+├── web/                              # frontend HTML, CSS e JavaScript
+├── analyze_lab01_s03.py              # analise e graficos de RQ01, RQ02 e RQ06
+└── project_snapshot.py               # snapshot do GitHub Projects v2
+```
+
 ## Commits
 
 Referencie a Issue correspondente em cada commit:

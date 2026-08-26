@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lab01 | Repositorios populares</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand"><span>LAB01</span><strong>Repositorios populares</strong></div>
+        <nav class="navigation" aria-label="Navegacao principal">
+          <button class="nav-item is-active" data-view="overview">Visao geral</button>
+          <button class="nav-item" data-view="collection">Coleta</button>
+          <button class="nav-item" data-view="sprint3">S03 - Analise</button>
+          <button class="nav-item" data-view="languages">Linguagens e RQ07</button>
+          <button class="nav-item" data-view="repositories">Repositorios</button>
+          <button class="nav-item" data-view="project">Project</button>
+        </nav>
+        <div class="sidebar-status" id="sidebar-status">Verificando dados locais...</div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div><p class="eyebrow">LABORATORIO DE EXPERIMENTACAO DE SOFTWARE</p><h1 id="view-title">Visao geral</h1></div>
+          <div class="topbar-actions"><span class="status-dot" id="app-status">Carregando</span><button class="button button-quiet" id="refresh-button">Atualizar</button></div>
+        </header>
+
+        <section class="view is-visible" id="overview-view">
+          <div class="metric-grid" id="summary-cards"></div>
+          <section class="panel"><div class="panel-heading"><div><h2>Resultados das RQs</h2><p>Indicadores calculados sobre a coleta atual.</p></div></div><div class="rq-grid" id="rq-summary"></div></section>
+        </section>
+
+        <section class="view" id="collection-view">
+          <section class="panel flow-panel"><div><h2>Coleta dos 1.000 repositorios</h2><p>Executa a consulta GraphQL paginada e salva o CSV usado por todas as analises.</p></div><div class="command-row"><button class="button button-primary" id="collect-button">Coletar 1.000 repositorios</button><button class="button button-danger" id="clear-button">Limpar CSV e analises</button></div></section>
+          <section class="panel"><div class="panel-heading"><div><h2>Log de execucao</h2><p>Progresso da coleta, analise ou snapshot.</p></div></div><pre class="log-output" id="job-log">Nenhum processo executado nesta sessao.</pre></section>
+        </section>
+
+        <section class="view" id="sprint3-view">
+          <section class="panel flow-panel"><div><h2>Analise e visualizacoes da Sprint 3</h2><p>RQ01, RQ02 e RQ06. Gera JSON, graficos PNG para o relatorio e atualiza esta tela.</p></div><button class="button button-primary" id="analyze-button">Gerar analise S03</button></section>
+          <div class="metric-grid metric-grid-three" id="sprint3-cards"></div>
+          <section class="panel"><div class="panel-heading"><div><h2>Resultados da analise</h2><p>Selecione uma RQ para ler a interpretacao completa.</p></div></div><div class="sprint3-layout"><div class="result-list" id="sprint3-results"></div><article class="reading-panel"><p class="eyebrow" id="reading-rq">RQ01</p><h3 id="reading-title">Selecione uma analise</h3><p id="reading-text">Os resultados aparecerao apos a geracao da analise.</p></article></div></section>
+          <section class="panel"><div class="panel-heading"><div><h2>Graficos</h2><p>Os mesmos arquivos usados no relatorio da Sprint 3.</p></div><select id="chart-selector" aria-label="Escolher grafico"><option value="RQ01">RQ01 - Idade</option><option value="RQ02">RQ02 - PRs aceitas</option><option value="RQ06">RQ06 - Issues fechadas</option></select></div><img class="chart-image" id="chart-image" alt="Grafico da analise da Sprint 3"></section>
+        </section>
+
+        <section class="view" id="languages-view"><section class="panel"><div class="panel-heading"><div><h2>Linguagens e RQ07</h2><p>Medianas de PRs, releases e dias desde atualizacao por linguagem primaria.</p></div></div><div class="table-scroll"><table><thead><tr><th>Linguagem</th><th>Repos</th><th>Mediana PRs</th><th>Mediana releases</th><th>Mediana atualizacao</th></tr></thead><tbody id="language-table"></tbody></table></div></section></section>
+
+        <section class="view" id="repositories-view"><section class="panel"><div class="panel-heading repository-heading"><div><h2>Repositorios</h2><p>Consulta local sobre os 1.000 itens coletados.</p></div><div class="filters"><input id="repository-search" placeholder="Buscar repositorio"><select id="language-filter"><option>Todas</option></select></div></div><div class="table-scroll"><table><thead><tr><th>Rank</th><th>Repositorio</th><th>Linguagem</th><th>Idade</th><th>PRs</th><th>Releases</th><th>Atualizacao</th><th>Issues fechadas</th></tr></thead><tbody id="repository-table"></tbody></table></div><div class="pagination"><button class="button button-quiet" id="previous-page">Anterior</button><span id="page-label">Pagina 0/0</span><button class="button button-quiet" id="next-page">Proxima</button></div></section></section>
+
+        <section class="view" id="project-view"><section class="panel project-panel"><div><h2>Snapshot do GitHub Projects</h2><p>Exporta o estado atual do board para o fechamento da Sprint 3. O token precisa da permissao <code>read:project</code>.</p></div><form id="snapshot-form"><label>Owner<input name="owner" required placeholder="usuario-ou-organizacao"></label><label>Tipo<select name="owner_type"><option value="user">Usuario</option><option value="org">Organizacao</option></select></label><label>Numero do Project<input name="project_number" required inputmode="numeric" placeholder="1"></label><button class="button button-primary" type="submit">Exportar snapshot S03</button></form></section></section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

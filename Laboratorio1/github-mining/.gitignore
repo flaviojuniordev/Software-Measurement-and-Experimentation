@@ -1,15 +1,17 @@
 # Token e artefatos locais — não versionar
 .env
-__pycache__/
-*.pyc
-.DS_Store
-
-# Evidências entregáveis das sprints
 output/*
 !output/amostra_10_luidi.json
 !output/coleta_100.json
 !output/coleta_1000.csv
 !output/validacao_luidi_s02.txt
+!output/sprint3/
+!output/sprint3/*.json
+!output/sprint3/*.png
+__pycache__/
+*.pyc
+.DS_Store
+.matplotlib/
 snapshots/*
 !snapshots/.gitkeep
 !snapshots/lab01s02_project_snapshot.csv

@@ -1,0 +1,204 @@
+{
+  "sprint": "Lab01S03",
+  "scope": [
+    "RQ01",
+    "RQ02",
+    "RQ06"
+  ],
+  "generated_at": "2026-08-26T19:51:16.099586+00:00",
+  "source_csv": "/Users/flferreira/Software-Measurement-and-Experimentation/Laboratorio1/github-mining/output/coleta_1000.csv",
+  "source_collected_at": "2026-08-26T19:51:07.776783+00:00",
+  "repositories": 1000,
+  "results": {
+    "RQ01": {
+      "title": "Sistemas populares sao maduros/antigos?",
+      "metric": "Idade do repositorio em dias",
+      "statistics": {
+        "n": 1000,
+        "minimum": 13.33,
+        "p25": 1265.055,
+        "median": 2819.485,
+        "mean": 2789.2722,
+        "p75": 4143.0525,
+        "p90": 4976.136,
+        "maximum": 6711.73
+      },
+      "median_years": 7.72,
+      "distribution": [
+        {
+          "label": "Ate 1 ano",
+          "count": 83
+        },
+        {
+          "label": "1 a 3 anos",
+          "count": 111
+        },
+        {
+          "label": "3 a 5 anos",
+          "count": 134
+        },
+        {
+          "label": "5 a 10 anos",
+          "count": 329
+        },
+        {
+          "label": "Mais de 10 anos",
+          "count": 343
+        }
+      ],
+      "outliers": {
+        "method": "IQR (1,5 x intervalo interquartil)",
+        "lower_bound": -3051.9413,
+        "upper_bound": 8460.0487,
+        "count": 0,
+        "highest": []
+      },
+      "conclusion": "A mediana de idade e de 7.72 anos; isso sustenta a hipotese de que os repositorios populares da amostra sao, em geral, maduros."
+    },
+    "RQ02": {
+      "title": "Sistemas populares recebem muita contribuicao externa?",
+      "metric": "Total de pull requests aceitas",
+      "statistics": {
+        "n": 1000,
+        "minimum": 0.0,
+        "p25": 175.0,
+        "median": 773.5,
+        "mean": 4266.14,
+        "p75": 3424.0,
+        "p90": 9990.3,
+        "maximum": 103684.0
+      },
+      "distribution": [
+        {
+          "label": "0",
+          "count": 21
+        },
+        {
+          "label": "1 a 10",
+          "count": 29
+        },
+        {
+          "label": "11 a 100",
+          "count": 130
+        },
+        {
+          "label": "101 a 500",
+          "count": 238
+        },
+        {
+          "label": "501 a 1.000",
+          "count": 130
+        },
+        {
+          "label": "1.001 a 5.000",
+          "count": 264
+        },
+        {
+          "label": "Mais de 5.000",
+          "count": 188
+        }
+      ],
+      "outliers": {
+        "method": "IQR (1,5 x intervalo interquartil)",
+        "lower_bound": -4698.5,
+        "upper_bound": 8297.5,
+        "count": 124,
+        "highest": [
+          {
+            "repository": "firstcontributions/first-contributions",
+            "value": 103684.0
+          },
+          {
+            "repository": "llvm/llvm-project",
+            "value": 98253.0
+          },
+          {
+            "repository": "elastic/elasticsearch",
+            "value": 95958.0
+          },
+          {
+            "repository": "getsentry/sentry",
+            "value": 91522.0
+          },
+          {
+            "repository": "home-assistant/core",
+            "value": 90755.0
+          }
+        ]
+      },
+      "conclusion": "A mediana de pull requests aceitas e de 774. A distribuicao deve ser lida junto com os outliers, pois poucos projetos muito grandes elevam fortemente a media."
+    },
+    "RQ06": {
+      "title": "Sistemas populares possuem alto percentual de issues fechadas?",
+      "metric": "Razao entre issues fechadas e total de issues",
+      "statistics": {
+        "n": 956,
+        "minimum": 0.0748,
+        "p25": 0.7151,
+        "median": 0.8758,
+        "mean": 0.8043,
+        "p75": 0.9684,
+        "p90": 0.993,
+        "maximum": 1.0
+      },
+      "median_percent": 87.58,
+      "excluded_no_issues": 44,
+      "distribution": [
+        {
+          "label": "0% a 24%",
+          "count": 21
+        },
+        {
+          "label": "25% a 49%",
+          "count": 83
+        },
+        {
+          "label": "50% a 74%",
+          "count": 173
+        },
+        {
+          "label": "75% a 89%",
+          "count": 248
+        },
+        {
+          "label": "90% a 100%",
+          "count": 431
+        }
+      ],
+      "outliers": {
+        "method": "IQR (1,5 x intervalo interquartil)",
+        "lower_bound": 0.3352,
+        "upper_bound": 1.3483,
+        "count": 51,
+        "highest": [
+          {
+            "repository": "mlabonne/llm-course",
+            "value": 0.33
+          },
+          {
+            "repository": "freefq/free",
+            "value": 0.33
+          },
+          {
+            "repository": "xingshaocheng/architect-awesome",
+            "value": 0.3239
+          },
+          {
+            "repository": "minimaxir/big-list-of-naughty-strings",
+            "value": 0.3168
+          },
+          {
+            "repository": "karpathy/nanoGPT",
+            "value": 0.3168
+          }
+        ]
+      },
+      "conclusion": "A mediana da razao de issues fechadas e de 87.58%. Os repositorios sem issues foram excluidos desta razao porque nao ha denominador valido para o calculo."
+    }
+  },
+  "chart_files": {
+    "RQ01": "/Users/flferreira/Software-Measurement-and-Experimentation/Laboratorio1/github-mining/output/sprint3/rq01_idade.png",
+    "RQ02": "/Users/flferreira/Software-Measurement-and-Experimentation/Laboratorio1/github-mining/output/sprint3/rq02_prs_aceitas.png",
+    "RQ06": "/Users/flferreira/Software-Measurement-and-Experimentation/Laboratorio1/github-mining/output/sprint3/rq06_issues_fechadas.png"
+  }
+}
