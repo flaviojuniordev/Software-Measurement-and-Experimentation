@@ -110,13 +110,20 @@ A interface principal do Lab01 e um site local. Ela concentra a coleta, o acompa
 python3 web_lab01.py
 ```
 
-Abra `http://127.0.0.1:8000` no navegador. Na aba `S03 - Analise`, o botao de analise gera os resultados e os tres graficos de RQ01, RQ02 e RQ06 em `output/sprint3/`, prontos para o relatorio.
+Abra `http://127.0.0.1:8000` no navegador. Na aba `S03 - Analise`, o botao gera os resultados das sete RQs e os graficos em `output/sprint3/`, prontos para o relatorio. A parte de RQ03, RQ04, RQ05 e RQ07 tambem pode ser reproduzida sem a interface:
+
+```bash
+python3 analyze_lab01_s03_luidi.py
+```
+
+O script salva `luidi_results.json`, atualiza o `sprint3_results.json` combinado e preserva a implementacao de RQ01, RQ02 e RQ06 no script separado do Flavio.
 
 ```text
 github-mining/
 ├── web_lab01.py                      # servidor local da interface web
 ├── web/                              # frontend HTML, CSS e JavaScript
 ├── analyze_lab01_s03.py              # analise e graficos de RQ01, RQ02 e RQ06
+├── analyze_lab01_s03_luidi.py        # analise e graficos de RQ03, RQ04, RQ05 e RQ07
 └── project_snapshot.py               # snapshot do GitHub Projects v2
 ```
 

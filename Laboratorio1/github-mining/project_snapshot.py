@@ -25,7 +25,7 @@ from typing import Any
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 BASE_DIR = Path(__file__).resolve().parent
 ENV_FILE = BASE_DIR / ".env"
-DEFAULT_OUTPUT = BASE_DIR / "snapshots" / "lab01s02_project_snapshot.csv"
+DEFAULT_OUTPUT = BASE_DIR / "snapshots" / "lab01s03_project_snapshot.csv"
 MAX_REQUEST_ATTEMPTS = 3
 RETRY_HTTP_CODES = {502, 503, 504}
 

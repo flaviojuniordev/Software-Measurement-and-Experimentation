@@ -19,8 +19,9 @@ WEB_DIR = BASE_DIR / "web"
 DEFAULT_CSV = BASE_DIR / "output" / "coleta_1000.csv"
 SPRINT3_DIR = BASE_DIR / "output" / "sprint3"
 SPRINT3_RESULTS = SPRINT3_DIR / "sprint3_results.json"
+SPRINT3_LUIDI_RESULTS = SPRINT3_DIR / "luidi_results.json"
 QUERY_SCRIPT = BASE_DIR / "query.py"
-ANALYSIS_SCRIPT = BASE_DIR / "analyze_lab01_s03.py"
+ANALYSIS_SCRIPT = BASE_DIR / "analyze_lab01_s03_luidi.py"
 SNAPSHOT_SCRIPT = BASE_DIR / "project_snapshot.py"
 
 jobs: dict[str, dict[str, Any]] = {}
@@ -98,7 +99,15 @@ class Lab01Handler(SimpleHTTPRequestHandler):
             return
         if path.startswith("/api/chart/"):
             filename = path.removeprefix("/api/chart/")
-            allowed = {"rq01_idade.png", "rq02_prs_aceitas.png", "rq06_issues_fechadas.png"}
+            allowed = {
+                "rq01_idade.png",
+                "rq02_prs_aceitas.png",
+                "rq03_releases.png",
+                "rq04_atualizacao.png",
+                "rq05_linguagens.png",
+                "rq06_issues_fechadas.png",
+                "rq07_comparacao_linguagens.png",
+            }
             if filename not in allowed:
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
@@ -145,7 +154,12 @@ class Lab01Handler(SimpleHTTPRequestHandler):
                     if any(job["running"] for job in jobs.values()):
                         raise ValueError("Aguarde o processo atual terminar antes de limpar os dados.")
                 removed: list[str] = []
-                for file_path in (DEFAULT_CSV, SPRINT3_RESULTS, *SPRINT3_DIR.glob("*.png")):
+                for file_path in (
+                    DEFAULT_CSV,
+                    SPRINT3_RESULTS,
+                    SPRINT3_LUIDI_RESULTS,
+                    *SPRINT3_DIR.glob("*.png"),
+                ):
                     if file_path.is_file():
                         file_path.unlink()
                         removed.append(file_path.name)
