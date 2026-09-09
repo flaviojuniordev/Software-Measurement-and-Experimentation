@@ -1,0 +1,9 @@
+{
+  "name": "lab02-static-metrics",
+  "private": true,
+  "description": "Dependência local para medir duplicação nas soluções do Lab02.",
+  "devDependencies": {
+    "jscpd": "^4.0.5"
+  }
+}
+
