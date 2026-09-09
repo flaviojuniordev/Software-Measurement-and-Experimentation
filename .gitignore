@@ -8,6 +8,11 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+Laboratorio2/node_modules/
+Laboratorio2/trial-workspaces/
+Laboratorio2/data/active_trial.json
+Laboratorio2/data/trials.csv
+Laboratorio2/data/static_metrics.csv
 
 # Env / secrets
 .env
