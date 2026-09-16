@@ -7,6 +7,7 @@ import argparse
 import csv
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -164,8 +165,11 @@ def duplication_metric(solution_dir: Path) -> float:
     with tempfile.TemporaryDirectory(prefix=".jscpd-", dir=BASE_DIR) as temp_dir:
         report_dir = Path(temp_dir)
         try:
-            target = solution_dir.resolve().relative_to(BASE_DIR).as_posix()
+            target = Path(
+                os.path.relpath(solution_dir.resolve(), BASE_DIR.resolve())
+            ).as_posix()
         except ValueError:
+            # No Windows, unidades diferentes nao possuem caminho relativo comum.
             target = solution_dir.resolve().as_posix()
         completed = subprocess.run(
             [

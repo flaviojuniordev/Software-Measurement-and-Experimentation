@@ -1,0 +1,5 @@
+participant,kata,treatment,loc,avg_cyclomatic_complexity,maintainability_index,duplication_percentage
+flavio,kata_01,com_ia,49,6.667,58.591,0.000
+flavio,kata_02,com_ia,50,8.333,55.460,0.000
+flavio,kata_01,sem_ia,59,11.000,58.207,15.490
+flavio,kata_02,sem_ia,61,14.000,54.171,0.000

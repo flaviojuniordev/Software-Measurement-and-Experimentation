@@ -66,7 +66,7 @@ python3 -m unittest discover -s tests -v
 
 Esta etapa acrescenta quatro katas autorais, seus testes de aceitação, o desenho
 experimental e a coleta de métricas estáticas de RQ3. O assistente padronizado é o
-ChatGPT e cada trial tem time-box máximo de **35 minutos**.
+OpenAI Codex e cada trial tem time-box máximo de **35 minutos**.
 
 O desenho completo, as hipóteses, variáveis, contrabalanceamento e ameaças à
 validade estão em [`docs/experiment_design.md`](docs/experiment_design.md).
@@ -133,8 +133,10 @@ pytest katas/kata_04/tests -q
 Remove-Item Env:KATA_SOLUTION_DIR
 ```
 
-Nunca edite o starter versionado durante um trial. Preserve cada solução final em
-sua pasta até que os dois participantes terminem todas as katas, evitando vazamento.
+Nunca edite o starter versionado durante um trial. Preserve e versione cada solucao
+final em sua pasta de `trial-workspaces`, usando no commit o numero da Issue do
+trial correspondente. Os CSVs gerados em `data/` tambem fazem parte da entrega; o
+unico arquivo temporario ignorado pelo Git e `data/active_trial.json`.
 
 ### Coletar métricas estáticas (RQ3)
 
@@ -159,3 +161,15 @@ ocultas dentro da solução são excluídos. O jscpd usa clones de no mínimo 3 
 python3 -m unittest discover -s tests -v
 pytest
 ```
+
+## Interface web local
+
+A interface consolida execucao, cronometro, testes, metricas e leitura dos CSVs em uma unica visao.
+Os trials `sem_ia` desta versao foram resolvidos manualmente; os trials `com_ia` foram resolvidos com o OpenAI Codex.
+
+```bash
+source .venv/bin/activate
+python3 web_lab02.py --port 8001
+```
+
+Acesse `http://127.0.0.1:8001` no navegador.

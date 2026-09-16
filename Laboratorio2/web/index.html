@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lab02 | Assistentes de IA</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">L2</span>
+          <div><strong>Lab02</strong><small>IA vs. manual</small></div>
+        </div>
+        <nav class="navigation" aria-label="Navegacao principal">
+          <button class="nav-item is-active" data-view="overview"><span>01</span>Visao geral</button>
+          <button class="nav-item" data-view="execution"><span>02</span>Execucao</button>
+          <button class="nav-item" data-view="results"><span>03</span>Resultados</button>
+          <button class="nav-item" data-view="katas"><span>04</span>Katas</button>
+          <button class="nav-item" data-view="data"><span>05</span>Dados</button>
+        </nav>
+        <div class="sidebar-footer">
+          <span class="connection-dot"></span>
+          <span id="sidebar-status">Carregando dados</span>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">LABORATORIO DE EXPERIMENTACAO DE SOFTWARE</p>
+            <h1 id="view-title">Visao geral</h1>
+          </div>
+          <div class="topbar-actions">
+            <span class="status-chip is-running">Dados coletados</span>
+            <button class="icon-button" id="refresh-button" title="Atualizar dados" aria-label="Atualizar dados">&#8635;</button>
+          </div>
+        </header>
+
+        <section class="view is-visible" id="overview-view">
+          <div class="metric-grid" id="summary-metrics"></div>
+
+          <section class="content-band split-band">
+            <div>
+              <div class="section-heading">
+                <div><p class="eyebrow">PROGRESSO</p><h2>Matriz de execucao</h2></div>
+                <span class="quiet-label">8 trials planejados</span>
+              </div>
+              <div class="progress-matrix" id="progress-matrix"></div>
+            </div>
+            <div>
+              <div class="section-heading">
+                <div><p class="eyebrow">RQ1</p><h2>Tempo por tratamento</h2></div>
+              </div>
+              <div class="comparison-bars" id="overview-bars"></div>
+            </div>
+          </section>
+
+          <section class="content-band">
+            <div class="section-heading">
+              <div><p class="eyebrow">ULTIMOS REGISTROS</p><h2>Trials recentes</h2></div>
+              <button class="text-button" data-go="results">Ver resultados</button>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>Participante</th><th>Kata</th><th>Tratamento</th><th>Tempo</th><th>Testes</th><th>Status</th></tr></thead><tbody id="recent-trials"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="execution-view">
+          <section class="execution-layout">
+            <form class="execution-form" id="trial-form">
+              <div class="section-heading">
+                <div><p class="eyebrow">NOVO TRIAL</p><h2>Configurar execucao</h2></div>
+              </div>
+              <div class="form-grid">
+                <label>Participante<select name="participant"><option value="flavio">Flavio</option><option value="luidi">Luidi</option></select></label>
+                <label>Kata<select name="kata"><option value="kata_01">Kata 01</option><option value="kata_02">Kata 02</option><option value="kata_03">Kata 03</option><option value="kata_04">Kata 04</option></select></label>
+                <label>Tratamento<select name="treatment"><option value="com_ia">Com IA</option><option value="sem_ia">Sem IA</option></select></label>
+              </div>
+              <div class="button-row">
+                <button class="button button-secondary" type="button" id="prepare-button">Preparar workspace</button>
+                <button class="button button-primary" type="button" id="start-button">Iniciar trial</button>
+              </div>
+              <div class="workspace-path" id="workspace-path">Nenhum workspace selecionado.</div>
+            </form>
+
+            <section class="timer-surface" aria-live="polite">
+              <div class="timer-header"><span id="active-label">Nenhum trial ativo</span><span class="status-chip" id="timer-status">Parado</span></div>
+              <div class="timer-value" id="timer-value">35:00</div>
+              <div class="timer-track"><span id="timer-progress"></span></div>
+              <div class="timer-actions">
+                <button class="button button-secondary" id="test-button" disabled>Executar testes</button>
+                <button class="button button-danger" id="cancel-button" disabled>Cancelar</button>
+              </div>
+            </section>
+          </section>
+
+          <section class="content-band finish-band">
+            <div>
+              <div class="section-heading"><div><p class="eyebrow">ENCERRAMENTO</p><h2>Resultado do trial</h2></div></div>
+              <div class="finish-grid">
+                <label>Resultado<select id="outcome"><option value="green">Todos os testes passaram</option><option value="timebox">Time-box atingido</option></select></label>
+                <label>Testes aprovados<input id="tests-passed" type="number" min="0" value="0"></label>
+                <label>Testes falhando<input id="tests-failed" type="number" min="0" value="0"></label>
+                <label class="notes-field">Observacao<input id="trial-notes" placeholder="Opcional"></label>
+              </div>
+              <div class="button-row">
+                <button class="button button-primary" id="finish-button" disabled>Encerrar trial</button>
+                <button class="button button-secondary" id="metrics-button">Coletar metricas</button>
+              </div>
+            </div>
+            <pre class="console" id="execution-log">Aguardando uma operacao.</pre>
+          </section>
+        </section>
+
+        <section class="view" id="results-view">
+          <div class="metric-grid" id="result-metrics"></div>
+          <section class="content-band split-band results-comparison">
+            <div><div class="section-heading"><div><p class="eyebrow">RQ1 E RQ2</p><h2>Desempenho</h2></div></div><div class="comparison-bars" id="performance-bars"></div></div>
+            <div><div class="section-heading"><div><p class="eyebrow">RQ3</p><h2>Estrutura do codigo</h2></div></div><div class="comparison-bars" id="structure-bars"></div></div>
+          </section>
+          <section class="content-band">
+            <div class="section-heading"><div><p class="eyebrow">DETALHAMENTO</p><h2>Resultados por trial</h2></div></div>
+            <div class="table-scroll"><table><thead><tr><th>Participante</th><th>Kata</th><th>Tratamento</th><th>Tempo</th><th>Sucesso</th><th>LOC</th><th>Complexidade</th><th>MI</th><th>Duplicacao</th></tr></thead><tbody id="results-table"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="katas-view">
+          <div class="kata-grid" id="kata-grid"></div>
+        </section>
+
+        <section class="view" id="data-view">
+          <section class="content-band">
+            <div class="section-heading"><div><p class="eyebrow">CSV</p><h2>Dados coletados</h2></div><span class="quiet-label" id="row-count">0 registros</span></div>
+            <div class="table-scroll"><table><thead><tr><th>ID</th><th>Participante</th><th>Kata</th><th>Tratamento</th><th>Inicio</th><th>Fim</th><th>Segundos</th><th>Censurado</th><th>Aprovados</th><th>Falhando</th></tr></thead><tbody id="data-table"></tbody></table></div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
