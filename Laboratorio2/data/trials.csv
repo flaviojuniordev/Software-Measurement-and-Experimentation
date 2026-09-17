@@ -3,3 +3,7 @@ trial_id,participant,kata,treatment,started_at,finished_at,timebox_minutes,elaps
 fcfd1d21-b927-495d-a264-c380991a1857,flavio,kata_02,com_ia,2026-09-16T14:22:52+00:00,2026-09-16T14:23:35+00:00,35,43.189,43.189,false,false,11,0,1.0000,Solucao produzida com OpenAI Codex; testes passaram na primeira execucao.
 85948fa3-aaa0-4c6b-97c8-28b0898fcfbd,flavio,kata_01,sem_ia,2026-09-16T15:00:00+00:00,2026-09-16T15:27:23+00:00,35,1643.000,1643.000,false,false,10,0,1.0000,"Execucao manual; iteracoes 6/10, 9/10 e 10/10 testes."
 df6b4187-b206-4085-9674-2ccaa9371345,flavio,kata_02,sem_ia,2026-09-16T16:00:00+00:00,2026-09-16T16:28:44+00:00,35,1724.000,1724.000,false,false,11,0,1.0000,"Execucao manual; iteracoes 4/11, 10/11 e 11/11 testes."
+e520589a-7a51-49fb-a131-b83aabb568e1,luidi,kata_03,sem_ia,2026-09-16T22:18:13+00:00,2026-09-16T22:49:57+00:00,35,1904.415,1904.415,false,false,11,0,1.0000,
+2edc243d-ea30-427a-9a8e-3e894db01464,luidi,kata_04,com_ia,2026-09-16T22:50:34+00:00,2026-09-16T22:51:29+00:00,35,55.531,55.531,false,false,12,0,1.0000,
+03603351-a77f-49ba-bb13-86c83edb27f2,luidi,kata_03,com_ia,2026-09-16T22:51:48+00:00,2026-09-16T22:52:39+00:00,35,51.181,51.181,false,false,11,0,1.0000,
+b977e237-bfaa-4983-b383-278c9f6d13d0,luidi,kata_04,sem_ia,2026-09-16T22:56:05+00:00,2026-09-16T23:21:35+00:00,35,1530.015,1530.015,false,false,12,0,1.0000,
