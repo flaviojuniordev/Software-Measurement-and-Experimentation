@@ -1,0 +1,5 @@
+participant,kata,analysis_time_seconds_com_ia,analysis_time_seconds_sem_ia,success_rate_com_ia,success_rate_sem_ia,success_rate_percent_com_ia,success_rate_percent_sem_ia,tests_passed_com_ia,tests_passed_sem_ia,tests_failed_com_ia,tests_failed_sem_ia,censored_com_ia,censored_sem_ia,pair_id,time_delta_seconds,time_reduction_percent,speedup,success_rate_delta,tests_failed_delta
+flavio,kata_01,41.535,1643.0,1.0,1.0,100.0,100.0,10,10,0,0,False,False,flavio / kata_01,-1601.465,97.4720024345709,39.55700012038041,0.0,0
+flavio,kata_02,43.189,1724.0,1.0,1.0,100.0,100.0,11,11,0,0,False,False,flavio / kata_02,-1680.811,97.49483758700696,39.91757160388062,0.0,0
+luidi,kata_03,51.181,1904.415,1.0,1.0,100.0,100.0,11,11,0,0,False,False,luidi / kata_03,-1853.234,97.31250804052688,37.209413649596534,0.0,0
+luidi,kata_04,55.531,1530.015,1.0,1.0,100.0,100.0,12,12,0,0,False,False,luidi / kata_04,-1474.4840000000002,96.37055845857721,27.552448182096487,0.0,0

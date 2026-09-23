@@ -1,0 +1,34 @@
+{
+  "source": {
+    "path": "data/trials.csv",
+    "sha256": "09765b538d4b0111aaec52f989267c5d75899e27d170c783a04b179f3bba2b12",
+    "trials": 8,
+    "pairs": 4
+  },
+  "rq1": {
+    "median_time_com_ia_seconds": 47.185,
+    "median_time_sem_ia_seconds": 1683.5,
+    "median_delta_seconds": -1641.138,
+    "median_reduction_percent": 97.39225523754888,
+    "median_speedup": 38.38320688498847,
+    "pairs_favoring_ai": 4,
+    "p_value_two_sided": 0.125,
+    "p_value_directional": 0.0625,
+    "rank_biserial_ai_minus_manual": -1.0,
+    "interpretation": "Os quatro pares foram mais rapidos com IA, com efeito observado grande, mas n=4 limita a significancia do Wilcoxon bilateral."
+  },
+  "rq2": {
+    "green_trials": 8,
+    "median_success_com_ia_percent": 100.0,
+    "median_success_sem_ia_percent": 100.0,
+    "p_value_two_sided": 1.0,
+    "interpretation": "Todos os trials terminaram com 100% dos testes passando e zero falhas; nao houve variacao para atribuir diferenca funcional ao tratamento."
+  },
+  "figures": [
+    "rq1_paired_estimation",
+    "rq1_speedup",
+    "rq1_timebox",
+    "rq1_exact_permutations",
+    "rq2_outcomes"
+  ]
+}

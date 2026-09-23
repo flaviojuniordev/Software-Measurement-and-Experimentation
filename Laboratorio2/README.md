@@ -83,9 +83,9 @@ python3 -m pip install -r requirements.txt
 npm install
 ```
 
-`requirements.txt` instala pytest e Radon. `npm install` instala o jscpd localmente.
-O script de métricas também informa os comandos de instalação quando não encontra
-uma dessas ferramentas.
+`requirements.txt` instala pytest, Radon, Pandas, NumPy, SciPy, Matplotlib e
+Seaborn. `npm install` instala o jscpd localmente. O script de métricas também
+informa os comandos de instalação quando não encontra uma dessas ferramentas.
 
 ### Katas e testes de aceitação
 
@@ -173,3 +173,20 @@ python3 web_lab02.py --port 8001
 ```
 
 Acesse `http://127.0.0.1:8001` no navegador.
+
+## Sprint 3 - Analise de RQ1 e RQ2
+
+O script `analysis/rq1_rq2_analysis.py` valida os oito trials e seus quatro pares,
+calcula mediana/IQR, diferencas pareadas, reducao percentual e speedup. Ele tambem
+aplica o Wilcoxon pareado com tratamento explicito de empates e ausencia de
+variacao, calcula tamanho de efeito e gera tabelas, um resumo JSON e cinco
+visualizacoes em PNG/SVG.
+
+```bash
+source .venv/bin/activate
+python3 analysis/rq1_rq2_analysis.py
+```
+
+Os artefatos reproduziveis ficam em `analysis/results/` e `analysis/figures/`.
+A interpretacao pronta para o relatorio, incluindo as limitacoes decorrentes de
+`n = 4`, esta em [`docs/results_rq1_rq2.md`](docs/results_rq1_rq2.md).
