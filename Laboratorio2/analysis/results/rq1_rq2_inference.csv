@@ -1,0 +1,4 @@
+question,metric,n_pairs,median_delta_ai_minus_manual,bootstrap_ci_low,bootstrap_ci_high,wilcoxon_statistic,p_value_two_sided,p_value_directional,directional_alternative,method,effective_pairs,rank_biserial_ai_minus_manual,probability_pair_favors_ai
+RQ1,time_to_green_seconds,4,-1641.138000,-1853.234000,-1474.484000,0.000000,0.125000,0.062500,less,Wilcoxon exato,4,-1.000000,1.000000
+RQ2,success_rate,4,0.000000,0.000000,0.000000,0.000000,1.000000,1.000000,greater,nao aplicavel: todas as diferencas sao zero,0,0.000000,0.500000
+RQ2,tests_failed,4,0.000000,0.000000,0.000000,0.000000,1.000000,1.000000,less,nao aplicavel: todas as diferencas sao zero,0,0.000000,0.500000
