@@ -141,6 +141,96 @@ function renderResults() {
     : `<tr><td colspan="9" class="empty-cell">Nenhum resultado registrado.</td></tr>`;
 }
 
+function formatP(value) {
+  const number = numeric(value);
+  return Number.isFinite(number) ? number.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : "n/a";
+}
+
+function formatSigned(value, digits = 2) {
+  const number = numeric(value);
+  if (!Number.isFinite(number)) return "n/a";
+  const formatted = Math.abs(number).toLocaleString("pt-BR", { maximumFractionDigits: digits });
+  return `${number > 0 ? "+" : number < 0 ? "−" : ""}${formatted}`;
+}
+
+function analysisMetric(label, value, caption, help, tone = "") {
+  return `<article class="metric ${tone}" title="${escapeHtml(help)}"><span>${escapeHtml(label)} <b class="help-dot" aria-hidden="true">i</b></span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(caption)}</small></article>`;
+}
+
+function renderFigureGallery(containerId, figures) {
+  const labels = {
+    rq1_paired_estimation: "Tempo pareado e diferencas observadas",
+    rq1_speedup: "Speedup por participante e kata",
+    rq1_timebox: "Distancia dos trials ate o time-box",
+    rq1_exact_permutations: "Distribuicao exata sob a hipotese nula",
+    rq2_outcomes: "Resultado funcional dos testes",
+    rq3_paired_metrics: "Small multiples das quatro metricas",
+    rq3_loc_vs_complexity: "LOC versus complexidade com trajetorias pareadas",
+    rq3_difference_heatmap: "Heatmap dos efeitos normalizados",
+    rq3_forest_effects: "Forest plot dos efeitos observados",
+    rq3_leave_one_out: "Sensibilidade leave-one-pair-out",
+  };
+  byId(containerId).innerHTML = (figures || []).map((stem) => {
+    const safeStem = String(stem).replace(/[^a-z0-9_-]/gi, "");
+    const caption = labels[safeStem] || safeStem.replaceAll("_", " ");
+    return `<figure class="analysis-figure"><a href="/analysis/figures/${safeStem}.svg" target="_blank" rel="noopener" title="Abrir grafico completo em uma nova aba"><img loading="lazy" src="/analysis/figures/${safeStem}.svg" alt="${escapeHtml(caption)}"></a><figcaption>${escapeHtml(caption)} <span>↗</span></figcaption></figure>`;
+  }).join("");
+}
+
+function renderAnalysis() {
+  const analysis = state.payload?.analysis || {};
+  const rq12 = analysis.rq1_rq2_summary;
+  const rq3 = analysis.rq3_summary;
+  const status = byId("analysis-source-status");
+  if (!rq12 || !rq3) {
+    status.textContent = "Execute os scripts de analise";
+    status.className = "status-chip is-red";
+    byId("analysis-metrics").innerHTML = metric("ARTEFATOS", "Ausentes", "execute as analises Python", "tone-coral");
+    byId("analysis-questions").innerHTML = "";
+    byId("rq1-rq2-figures").innerHTML = "";
+    byId("rq3-figures").innerHTML = "";
+    byId("rq3-analysis-table").innerHTML = `<tr><td colspan="8" class="empty-cell">Resultados analiticos ainda nao foram gerados.</td></tr>`;
+    return;
+  }
+
+  status.textContent = `${rq3.sources.static_metrics.records} medicoes · ${rq3.sources.pairs} pares`;
+  status.className = "status-chip is-green";
+  const structural = Object.values(rq3.metrics);
+  const smallestHolm = Math.min(...structural.map((item) => numeric(item.holm_adjusted_p)).filter(Number.isFinite));
+  const loc = rq3.metrics.loc;
+  byId("analysis-metrics").innerHTML = [
+    analysisMetric("RQ1 · SPEEDUP MEDIANO", `${fmtNumber.format(rq12.rq1.median_speedup)}×`, "sem IA / com IA", "Valores acima de 1 indicam que o tratamento com IA terminou mais rapidamente.", "tone-teal"),
+    analysisMetric("RQ2 · TRIALS VERDES", `${rq12.rq2.green_trials}/${rq3.sources.trials.records}`, `${fmtNumber.format(rq12.rq2.median_success_com_ia_percent)}% de mediana com IA`, "Trial verde significa zero testes falhando ao final da execucao.", "tone-green"),
+    analysisMetric("RQ3 · DELTA MEDIANO LOC", `${formatSigned(loc.median_delta_ai_minus_manual, 1)} linhas`, "com IA menos sem IA", "Para LOC, valores negativos indicam solucoes menores no tratamento com IA.", "tone-coral"),
+    analysisMetric("RQ3 · MENOR P HOLM", formatP(smallestHolm), "correcao exploratoria", `A correcao de Holm controla ${structural.length} comparacoes de RQ3; n=${rq3.sources.pairs} limita a potencia.`, "tone-amber"),
+  ].join("");
+
+  const favorableLoc = loc.pairs_favoring_ai;
+  const favorableComplexity = rq3.metrics.avg_cyclomatic_complexity.pairs_favoring_ai;
+  const pairCount = rq3.sources.pairs;
+  const significantAfterHolm = structural.filter((item) => numeric(item.holm_adjusted_p) < 0.05).length;
+  const significanceText = significantAfterHolm
+    ? `${significantAfterHolm} de ${structural.length} comparacoes foram significativas apos Holm.`
+    : `Nenhuma das ${structural.length} comparacoes foi significativa apos Holm.`;
+  const rq3Conclusion = `${favorableLoc}/${pairCount} pares favoreceram IA em LOC e ${favorableComplexity}/${pairCount} em complexidade. ${significanceText} O resultado permanece exploratorio.`;
+  byId("rq12-pair-count").textContent = `Resultados pareados · n = ${pairCount}`;
+  byId("analysis-questions").innerHTML = [
+    ["RQ1", "Tempo de resolucao", rq12.rq1.interpretation, "tone-teal"],
+    ["RQ2", "Qualidade funcional", rq12.rq2.interpretation, "tone-green"],
+    ["RQ3", "Estrutura do codigo", rq3Conclusion, "tone-amber"],
+  ].map(([question, title, body, tone]) => `<article class="question-card ${tone}"><span>${question}</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(body)}</p></article>`).join("");
+
+  renderFigureGallery("rq1-rq2-figures", rq12.figures);
+  renderFigureGallery("rq3-figures", rq3.figures);
+
+  const inference = new Map((analysis.rq3_inference || []).map((row) => [row.metric, row]));
+  byId("rq3-analysis-table").innerHTML = Object.entries(rq3.metrics).map(([key, item]) => {
+    const row = inference.get(key) || {};
+    const favorable = `${item.pairs_favoring_ai}/${pairCount}${item.pairs_tied ? ` · ${item.pairs_tied} empates` : ""}`;
+    return `<tr title="${escapeHtml(row.method || "")}"><td><strong>${escapeHtml(item.label)}</strong><br><small>${item.better_when === "lower" ? "menor e melhor" : "maior e melhor"}</small></td><td>${fmtNumber.format(item.median_com_ia)}</td><td>${fmtNumber.format(item.median_sem_ia)}</td><td>${formatSigned(item.median_delta_ai_minus_manual, 3)}</td><td>${formatP(item.p_value_two_sided)}</td><td>${formatP(item.holm_adjusted_p)}</td><td>${formatSigned(item.rank_biserial_favors_ai, 2)}</td><td>${escapeHtml(favorable)}</td></tr>`;
+  }).join("");
+}
+
 function renderKatas() {
   const descriptions = {
     kata_01: "Agrupar solicitacoes proximas do mesmo equipamento em visitas de calibracao.",
@@ -205,6 +295,7 @@ function renderAll() {
   renderResults();
   renderKatas();
   renderData();
+  renderAnalysis();
   renderExecution();
   byId("sidebar-status").textContent = `${rowsForMode().length} trials carregados`;
 }

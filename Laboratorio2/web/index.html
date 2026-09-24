@@ -19,6 +19,7 @@
           <button class="nav-item" data-view="results"><span>03</span>Resultados</button>
           <button class="nav-item" data-view="katas"><span>04</span>Katas</button>
           <button class="nav-item" data-view="data"><span>05</span>Dados</button>
+          <button class="nav-item" data-view="analysis"><span>06</span>Analise Sprint 3</button>
         </nav>
         <div class="sidebar-footer">
           <span class="connection-dot"></span>
@@ -133,6 +134,45 @@
           <section class="content-band">
             <div class="section-heading"><div><p class="eyebrow">CSV</p><h2>Dados coletados</h2></div><span class="quiet-label" id="row-count">0 registros</span></div>
             <div class="table-scroll"><table><thead><tr><th>ID</th><th>Participante</th><th>Kata</th><th>Tratamento</th><th>Inicio</th><th>Fim</th><th>Segundos</th><th>Censurado</th><th>Aprovados</th><th>Falhando</th></tr></thead><tbody id="data-table"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="analysis-view">
+          <div class="analysis-intro">
+            <div>
+              <p class="eyebrow">SPRINT 3 · ANALISE REPRODUZIVEL</p>
+              <h2>RQ1, RQ2 e RQ3 em uma unica leitura</h2>
+              <p>Os numeros abaixo sao carregados dos JSONs e CSVs gerados pelos scripts de analise. Passe o cursor sobre os indicadores para ver como interpreta-los.</p>
+            </div>
+            <span class="status-chip is-running" id="analysis-source-status">Carregando artefatos</span>
+          </div>
+
+          <div class="metric-grid" id="analysis-metrics"></div>
+
+          <section class="analysis-question-grid" id="analysis-questions"></section>
+
+          <section class="content-band analysis-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">RQ1 E RQ2</p><h2>Produtividade e qualidade funcional</h2></div>
+              <span class="quiet-label" id="rq12-pair-count">Resultados pareados</span>
+            </div>
+            <div class="figure-gallery" id="rq1-rq2-figures"></div>
+          </section>
+
+          <section class="content-band analysis-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">RQ3</p><h2>Estrutura do codigo</h2></div>
+              <span class="quiet-label">LOC · complexidade · MI · duplicacao</span>
+            </div>
+            <div class="figure-gallery" id="rq3-figures"></div>
+          </section>
+
+          <section class="content-band analysis-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">INFERENCIA EXPLORATORIA</p><h2>Resumo estatistico de RQ3</h2></div>
+              <span class="quiet-label">Wilcoxon pareado + Holm</span>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>Metrica</th><th>Mediana com IA</th><th>Mediana sem IA</th><th>Delta IA - manual</th><th>P bilateral</th><th>P Holm</th><th>Efeito bisserial</th><th>Pares favoraveis</th></tr></thead><tbody id="rq3-analysis-table"></tbody></table></div>
           </section>
         </section>
       </section>

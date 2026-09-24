@@ -1,0 +1,5 @@
+metric,label,unit,better_when,n_pairs,median_delta_ai_minus_manual,median_oriented_effect,bootstrap_delta_ci_low,bootstrap_delta_ci_high,wilcoxon_statistic,p_value_two_sided,holm_adjusted_p,method,effective_pairs,zero_differences,rank_biserial_favors_ai,rank_biserial_bootstrap_ci_low,rank_biserial_bootstrap_ci_high,pairs_favoring_ai,pairs_tied,proportion_pairs_favoring_ai
+loc,LOC,linhas,lower,4,-15.500000,15.500000,-50.000000,-10.000000,0.000000,0.125000,0.500000,Wilcoxon exato,4,0,1.000000,1.000000,1.000000,4,0,1.000000
+avg_cyclomatic_complexity,Complexidade ciclomática média,McCabe,lower,4,-5.000000,5.000000,-9.000000,-4.000000,0.000000,0.125000,0.500000,Wilcoxon exato,4,0,1.000000,1.000000,1.000000,4,0,1.000000
+maintainability_index,Maintainability Index,índice 0–100,higher,4,0.405000,0.405000,-5.530000,1.289000,4.000000,0.875000,1.000000,Wilcoxon exato,4,0,0.200000,-0.800000,1.000000,3,0,0.750000
+duplication_percentage,Duplicação,%,lower,4,0.000000,0.000000,-15.490000,0.000000,0.000000,1.000000,1.000000,permutacao exata de sinais (empates/zeros),1,3,1.000000,0.000000,1.000000,1,3,0.250000

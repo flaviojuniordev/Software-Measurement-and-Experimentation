@@ -1,0 +1,17 @@
+metric,label,omitted_pair,remaining_pairs,median_delta_ai_minus_manual,median_oriented_effect,relative_oriented_effect_percent,rank_biserial_favors_ai,proportion_pairs_favoring_ai
+loc,LOC,flavio / kata_01,3,-20.000000,20.000000,28.985507,1.000000,1.000000
+loc,LOC,flavio / kata_02,3,-20.000000,20.000000,28.985507,1.000000,1.000000
+loc,LOC,luidi / kata_03,3,-11.000000,11.000000,18.032787,1.000000,1.000000
+loc,LOC,luidi / kata_04,3,-11.000000,11.000000,18.032787,1.000000,1.000000
+avg_cyclomatic_complexity,Complexidade ciclomática média,flavio / kata_01,3,-5.667000,5.667000,21.796154,1.000000,1.000000
+avg_cyclomatic_complexity,Complexidade ciclomática média,flavio / kata_02,3,-4.333000,4.333000,16.665385,1.000000,1.000000
+avg_cyclomatic_complexity,Complexidade ciclomática média,luidi / kata_03,3,-5.667000,5.667000,40.478571,1.000000,1.000000
+avg_cyclomatic_complexity,Complexidade ciclomática média,luidi / kata_04,3,-4.333000,4.333000,30.950000,1.000000,1.000000
+maintainability_index,Maintainability Index,flavio / kata_01,3,0.426000,0.426000,0.749538,0.000000,0.666667
+maintainability_index,Maintainability Index,flavio / kata_02,3,0.384000,0.384000,0.659714,0.000000,0.666667
+maintainability_index,Maintainability Index,luidi / kata_03,3,0.426000,0.426000,0.749538,1.000000,1.000000
+maintainability_index,Maintainability Index,luidi / kata_04,3,0.384000,0.384000,0.659714,0.000000,0.666667
+duplication_percentage,Duplicação,flavio / kata_01,3,0.000000,0.000000,0.000000,0.000000,0.000000
+duplication_percentage,Duplicação,flavio / kata_02,3,0.000000,0.000000,0.000000,1.000000,0.333333
+duplication_percentage,Duplicação,luidi / kata_03,3,0.000000,0.000000,0.000000,1.000000,0.333333
+duplication_percentage,Duplicação,luidi / kata_04,3,0.000000,0.000000,0.000000,1.000000,0.333333
