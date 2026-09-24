@@ -1,0 +1,110 @@
+{
+  "sources": {
+    "static_metrics": {
+      "path": "data/static_metrics.csv",
+      "sha256": "92cd2f9ab4118f384a07712d12ef0f27cf7287fb3ed3a163b740c540c22d0533",
+      "records": 8
+    },
+    "trials": {
+      "path": "data/trials.csv",
+      "sha256": "39402aed75dd4d4ca0e13be195de0877b0ee9406b05dba664e07a29ac479de4d",
+      "records": 8
+    },
+    "pairs": 4
+  },
+  "analysis": {
+    "difference_definition": "com_ia menos sem_ia",
+    "effect_orientation": "positivo favorece IA",
+    "bootstrap_resamples": 20000,
+    "holm_correction": "exploratoria para quatro metricas"
+  },
+  "metrics": {
+    "loc": {
+      "label": "LOC",
+      "unit": "linhas",
+      "better_when": "lower",
+      "median_com_ia": 49.0,
+      "median_sem_ia": 65.0,
+      "median_delta_ai_minus_manual": -15.5,
+      "bootstrap_delta_ci": [
+        -50.0,
+        -10.0
+      ],
+      "wilcoxon_statistic": 0.0,
+      "p_value_two_sided": 0.125,
+      "holm_adjusted_p": 0.5,
+      "method": "Wilcoxon exato",
+      "rank_biserial_favors_ai": 1.0,
+      "pairs_favoring_ai": 4,
+      "pairs_tied": 0,
+      "proportion_pairs_favoring_ai": 1.0
+    },
+    "avg_cyclomatic_complexity": {
+      "label": "Complexidade ciclomática média",
+      "unit": "McCabe",
+      "better_when": "lower",
+      "median_com_ia": 15.1665,
+      "median_sem_ia": 20.0,
+      "median_delta_ai_minus_manual": -5.0,
+      "bootstrap_delta_ci": [
+        -9.0,
+        -4.0
+      ],
+      "wilcoxon_statistic": 0.0,
+      "p_value_two_sided": 0.125,
+      "holm_adjusted_p": 0.5,
+      "method": "Wilcoxon exato",
+      "rank_biserial_favors_ai": 1.0,
+      "pairs_favoring_ai": 4,
+      "pairs_tied": 0,
+      "proportion_pairs_favoring_ai": 1.0
+    },
+    "maintainability_index": {
+      "label": "Maintainability Index",
+      "unit": "índice 0–100",
+      "better_when": "higher",
+      "median_com_ia": 57.6865,
+      "median_sem_ia": 57.521,
+      "median_delta_ai_minus_manual": 0.405,
+      "bootstrap_delta_ci": [
+        -5.53,
+        1.289
+      ],
+      "wilcoxon_statistic": 4.0,
+      "p_value_two_sided": 0.875,
+      "holm_adjusted_p": 1.0,
+      "method": "Wilcoxon exato",
+      "rank_biserial_favors_ai": 0.2,
+      "pairs_favoring_ai": 3,
+      "pairs_tied": 0,
+      "proportion_pairs_favoring_ai": 0.75
+    },
+    "duplication_percentage": {
+      "label": "Duplicação",
+      "unit": "%",
+      "better_when": "lower",
+      "median_com_ia": 0.0,
+      "median_sem_ia": 0.0,
+      "median_delta_ai_minus_manual": 0.0,
+      "bootstrap_delta_ci": [
+        -15.49,
+        0.0
+      ],
+      "wilcoxon_statistic": 0.0,
+      "p_value_two_sided": 1.0,
+      "holm_adjusted_p": 1.0,
+      "method": "permutacao exata de sinais (empates/zeros)",
+      "rank_biserial_favors_ai": 1.0,
+      "pairs_favoring_ai": 1,
+      "pairs_tied": 3,
+      "proportion_pairs_favoring_ai": 0.25
+    }
+  },
+  "figures": [
+    "rq3_paired_metrics",
+    "rq3_loc_vs_complexity",
+    "rq3_difference_heatmap",
+    "rq3_forest_effects",
+    "rq3_leave_one_out"
+  ]
+}

@@ -190,3 +190,41 @@ python3 analysis/rq1_rq2_analysis.py
 Os artefatos reproduziveis ficam em `analysis/results/` e `analysis/figures/`.
 A interpretacao pronta para o relatorio, incluindo as limitacoes decorrentes de
 `n = 4`, esta em [`docs/results_rq1_rq2.md`](docs/results_rq1_rq2.md).
+
+## Sprint 3 - Analise de RQ3 e dashboard final
+
+O script `analysis/rq3_analysis.py` valida a correspondencia entre os oito trials
+e as oito medicoes estaticas, calcula resumos por tratamento e diferencas
+pareadas para LOC, complexidade, Maintainability Index e duplicacao. A analise
+inclui Wilcoxon exato ou permutacional, correlacao bisserial de postos, intervalos
+bootstrap exploratorios, correcao de Holm e sensibilidade leave-one-pair-out.
+
+```bash
+source .venv/bin/activate
+python3 analysis/rq1_rq2_analysis.py
+python3 analysis/rq3_analysis.py
+python3 -m pytest
+```
+
+No PowerShell do Windows, ative o ambiente com
+`.venv\Scripts\Activate.ps1` e substitua `python3` por `python` se necessario.
+Os CSVs e JSONs reproduziveis ficam em `analysis/results/`; as cinco figuras de
+RQ3 sao geradas em PNG e SVG dentro de `analysis/figures/`. O resumo JSON inclui
+os hashes SHA-256 de `data/trials.csv` e `data/static_metrics.csv`.
+
+A metodologia, os valores observados, a resposta preliminar e as limitacoes de
+`n = 4` estao em [`docs/results_rq3.md`](docs/results_rq3.md).
+
+### Abrir o dashboard consolidado
+
+Gere primeiro as duas analises e depois inicie o servidor:
+
+```bash
+python3 analysis/rq1_rq2_analysis.py
+python3 analysis/rq3_analysis.py
+python3 web_lab02.py --port 8001
+```
+
+Acesse `http://127.0.0.1:8001` e abra **Analise Sprint 3**. Essa tela le os JSONs
+e CSVs gerados pelos scripts, apresenta RQ1, RQ2 e RQ3 sem estatisticas fixas no
+JavaScript e permite abrir cada grafico completo em uma nova aba.

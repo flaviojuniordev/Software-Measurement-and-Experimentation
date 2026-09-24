@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import json
+import mimetypes
 import os
 import re
 import shutil
@@ -146,6 +147,26 @@ def dataset_payload() -> dict[str, Any]:
         "metrics": read_csv(DATA_DIR / "static_metrics.csv"),
         "active": read_json(DATA_DIR / "active_trial.json"),
         "katas": KATAS,
+        "analysis": {
+            "rq1_rq2_summary": read_json(
+                BASE_DIR / "analysis" / "results" / "rq1_rq2_summary.json"
+            ),
+            "rq1_rq2_inference": read_csv(
+                BASE_DIR / "analysis" / "results" / "rq1_rq2_inference.csv"
+            ),
+            "rq3_summary": read_json(
+                BASE_DIR / "analysis" / "results" / "rq3_summary.json"
+            ),
+            "rq3_descriptive": read_csv(
+                BASE_DIR / "analysis" / "results" / "rq3_descriptive.csv"
+            ),
+            "rq3_inference": read_csv(
+                BASE_DIR / "analysis" / "results" / "rq3_inference.csv"
+            ),
+            "rq3_leave_one_out": read_csv(
+                BASE_DIR / "analysis" / "results" / "rq3_leave_one_out.csv"
+            ),
+        },
         "simulation": True,
     }
 
@@ -162,9 +183,29 @@ class Lab02Handler(SimpleHTTPRequestHandler):
         if path == "/api/data":
             self.send_json(dataset_payload())
             return
+        if path.startswith("/analysis/figures/"):
+            filename = path.removeprefix("/analysis/figures/")
+            if filename != Path(filename).name or Path(filename).suffix not in {".png", ".svg"}:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            self.send_local_file(BASE_DIR / "analysis" / "figures" / filename)
+            return
         if path == "/":
             self.path = "/index.html"
         super().do_GET()
+
+    def send_local_file(self, path: Path) -> None:
+        if not path.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        content = path.read_bytes()
+        content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(content)
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path

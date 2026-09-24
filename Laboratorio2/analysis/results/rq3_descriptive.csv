@@ -1,0 +1,9 @@
+treatment,metric,label,unit,better_when,n,median,q1,q3,iqr,minimum,maximum
+com_ia,loc,LOC,linhas,lower,4,49.000000,48.500000,49.250000,0.750000,47.000000,50.000000
+com_ia,avg_cyclomatic_complexity,Complexidade ciclomática média,McCabe,lower,4,15.166500,7.916500,23.000000,15.083500,6.667000,26.000000
+com_ia,maintainability_index,Maintainability Index,índice 0–100,higher,4,57.686500,56.810750,58.231750,1.421000,55.460000,58.591000
+com_ia,duplication_percentage,Duplicação,%,lower,4,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000
+sem_ia,loc,LOC,linhas,lower,4,65.000000,60.500000,76.000000,15.500000,59.000000,97.000000
+sem_ia,avg_cyclomatic_complexity,Complexidade ciclomática média,McCabe,lower,4,20.000000,13.250000,28.250000,15.000000,11.000000,35.000000
+sem_ia,maintainability_index,Maintainability Index,índice 0–100,higher,4,57.521000,56.169000,59.565750,3.396750,54.171000,63.642000
+sem_ia,duplication_percentage,Duplicação,%,lower,4,0.000000,0.000000,3.872500,3.872500,0.000000,15.490000
