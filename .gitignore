@@ -6,6 +6,10 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 .venv/
 venv/
 Laboratorio2/node_modules/

@@ -41,5 +41,28 @@ Espera-se que a maioria dos episodios de falha de CI seja recuperada em menos de
 assim, espera-se encontrar episodios censurados, sem uma execucao bem-sucedida ate
 o final da janela.
 
+## RQ05 - Frequencia de deploy e taxa de falha
+
+Espera-se uma associacao fraca ou potencialmente inversa entre frequencia de
+deploy e change failure rate. Uma frequencia maior nao implica necessariamente
+mais instabilidade: entregas menores, automacao e feedback rapido podem permitir
+que velocidade e estabilidade coexistam. A hipotese sera examinada separadamente
+para os proxies de falha de CI e de release corretiva.
+
+## RQ06 - Caracteristicas associadas ao desempenho DORA
+
+Espera-se que caracteristicas como popularidade, numero de contribuidores, idade,
+linguagem principal e tipo de projeto estejam associadas a diferencas nas metricas
+DORA. Essas relacoes podem refletir ecossistemas, praticas de automacao e perfis de
+manutencao distintos; nao serao interpretadas como evidencia de causalidade.
+
+## RQ07 - Sensibilidade as definicoes operacionais
+
+Espera-se que parte dos repositorios mude de categoria quando releases forem
+substituidas ou ampliadas por pre-releases e tags, ou quando forem usadas variantes
+de lead time e CFR. Ao mesmo tempo, espera-se maior estabilidade de classificacao
+para projetos cujos indicadores estejam distantes dos limites entre Elite, High,
+Medium e Low. Nenhum percentual de mudanca ou nivel de concordancia e antecipado.
+
 Essas expectativas nao constituem resultados e poderao ser confirmadas ou
 contraditas somente apos a coleta completa e as analises das proximas sprints.
