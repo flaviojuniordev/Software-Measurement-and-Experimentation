@@ -1,0 +1,18 @@
+{
+  "observation": {
+    "start_date": null,
+    "end_date": null
+  },
+  "collection": {
+    "candidate_limit": 300,
+    "minimum_stars": 1000,
+    "minimum_releases": 5,
+    "collect_tags": true
+  },
+  "runtime": {
+    "cache_dir": ".cache/github",
+    "output_dir": "data",
+    "max_retries": 5,
+    "request_timeout_seconds": 30
+  }
+}

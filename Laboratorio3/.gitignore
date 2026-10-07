@@ -1,0 +1,7 @@
+.cache/
+.coverage
+.pytest_cache/
+data/*.csv
+data/*.json
+data/raw/
+!.gitkeep
