@@ -79,7 +79,7 @@ O dicionario das colunas esta em `docs/dicionario_dados_s01.md`.
 ## Testes
 
 ```bash
-pytest
+python3 -m pytest
 ```
 
 Os testes usam fixtures locais e respostas simuladas. Nenhuma chamada real a API e
