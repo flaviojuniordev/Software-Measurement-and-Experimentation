@@ -31,6 +31,7 @@ class PipelineConfig:
     candidate_limit: int = 300
     minimum_stars: int = 1_000
     minimum_releases: int = 5
+    minimum_workflow_runs: int = 50
     cache_dir: Path = Path(".cache/github")
     output_dir: Path = Path("data")
     collect_tags: bool = True
@@ -71,6 +72,9 @@ class PipelineConfig:
             ),
             minimum_stars=int(collection.get("minimum_stars", 1_000)),
             minimum_releases=int(collection.get("minimum_releases", 5)),
+            minimum_workflow_runs=int(
+                collection.get("minimum_workflow_runs", 50)
+            ),
             cache_dir=_resolve_path(base_dir, runtime.get("cache_dir", ".cache/github")),
             output_dir=_resolve_path(base_dir, runtime.get("output_dir", "data")),
             collect_tags=bool(collection.get("collect_tags", True)),
@@ -94,6 +98,8 @@ class PipelineConfig:
             raise ConfigError("minimum_stars nao pode ser negativo.")
         if self.minimum_releases < 1:
             raise ConfigError("minimum_releases deve ser positivo.")
+        if self.minimum_workflow_runs < 1:
+            raise ConfigError("minimum_workflow_runs deve ser positivo.")
         if self.max_retries < 0:
             raise ConfigError("max_retries nao pode ser negativo.")
         if self.request_timeout_seconds < 1:

@@ -19,7 +19,10 @@ SELECTION_FIELDS = [
     "contributors_count",
     "workflows_count",
     "releases_in_window",
+    "workflow_runs_count",
+    "valid_workflow_runs_count",
     "task1_included",
+    "s01_included",
     "discard_reason",
     "collection_error",
 ]
@@ -34,6 +37,8 @@ REPOSITORY_FIELDS = [
     "contributors_count",
     "workflows_count",
     "releases_in_window",
+    "workflow_runs_count",
+    "valid_workflow_runs_count",
     "tags_count",
     "deployment_frequency_per_week",
     "lead_time_release_median_hours",
@@ -41,6 +46,17 @@ REPOSITORY_FIELDS = [
     "lead_time_release_observations",
     "lead_time_commit_observations",
     "compare_errors",
+    "ci_change_failure_rate",
+    "failure_episodes_total",
+    "failure_episodes_recovered",
+    "failure_episodes_censored",
+    "censored_episodes_proportion",
+    "median_recovery_hours",
+    "deployment_frequency_dora",
+    "lead_time_dora",
+    "change_failure_rate_dora",
+    "recovery_time_dora",
+    "overall_dora",
 ]
 
 
@@ -52,7 +68,7 @@ def checkpoint(
     output_dir.mkdir(parents=True, exist_ok=True)
     write_csv(output_dir / "selection_funnel.csv", selection_rows, SELECTION_FIELDS)
     write_csv(
-        output_dir / "repositories_task1.csv", repository_rows, REPOSITORY_FIELDS
+        output_dir / "repositories_s01.csv", repository_rows, REPOSITORY_FIELDS
     )
     funnel = build_funnel(selection_rows)
     write_json(output_dir / "selection_funnel.json", funnel)
@@ -87,8 +103,12 @@ def build_funnel(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
             "count": sum(bool(row.get("task1_included")) for row in rows),
         },
         {
-            "stage": "ready_for_task2",
-            "count": sum(bool(row.get("task1_included")) for row in rows),
+            "stage": "with_minimum_workflow_runs",
+            "count": sum(bool(row.get("s01_included")) for row in rows),
+        },
+        {
+            "stage": "included_s01",
+            "count": sum(bool(row.get("s01_included")) for row in rows),
         },
     ]
     return {"stages": stages, "discard_reasons": dict(sorted(reasons.items()))}
