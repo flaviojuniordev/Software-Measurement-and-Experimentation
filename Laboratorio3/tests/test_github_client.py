@@ -1,5 +1,6 @@
 import io
 import json
+from http.client import IncompleteRead
 from urllib.error import HTTPError
 
 from pipeline.github_client import GitHubClient, parse_link_header
@@ -81,6 +82,36 @@ def test_retries_server_error_with_exponential_backoff(tmp_path):
     )
 
     assert client.get("/health").data == {"ok": True}
+    assert attempts == 2
+    assert sleeps == [1]
+
+
+def test_retries_truncated_http_response(tmp_path):
+    attempts = 0
+    sleeps = []
+
+    def opener(request, timeout):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            return BrokenRaw()
+        return FakeRaw({"ok": True})
+
+    class BrokenRaw:
+        headers = {}
+        status = 200
+
+        def read(self):
+            raise IncompleteRead(b"partial", 10)
+
+        def close(self):
+            pass
+
+    client = GitHubClient(
+        "token", tmp_path, opener=opener, sleeper=sleeps.append, max_retries=2
+    )
+
+    assert client.get("/large-response").data == {"ok": True}
     assert attempts == 2
     assert sleeps == [1]
 

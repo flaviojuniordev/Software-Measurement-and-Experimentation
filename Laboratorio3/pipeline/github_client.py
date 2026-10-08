@@ -8,6 +8,7 @@ import os
 import ssl
 import time
 from dataclasses import dataclass
+from http.client import HTTPException
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
 from urllib.error import HTTPError, URLError
@@ -127,7 +128,7 @@ class GitHubClient:
                     self._wait_before_retry(attempt, headers)
                     continue
                 raise GitHubAPIError(exc.code, url, last_error) from exc
-            except (URLError, TimeoutError, OSError) as exc:
+            except (URLError, TimeoutError, OSError, HTTPException) as exc:
                 last_error = str(exc)
                 if attempt < self.max_retries:
                     self._sleep(2**attempt)
