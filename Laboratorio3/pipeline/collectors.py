@@ -1,13 +1,53 @@
-"""Coletores de repositorios, releases, tags e commits."""
+"""Coletores de repositorios, releases, tags, commits e workflow runs."""
 
 from __future__ import annotations
 
-from datetime import date
+from calendar import monthrange
+from dataclasses import dataclass
+from datetime import date, timedelta
 from typing import Any
 from urllib.parse import parse_qs, quote, urlsplit
 
 from .github_client import GitHubAPIError, GitHubClient, parse_link_header
 from .metrics import parse_github_datetime
+
+
+GITHUB_FILTERED_QUERY_LIMIT = 1_000
+
+
+class WorkflowRunWindowLimitError(RuntimeError):
+    """Indica que um mes atingiu o teto de resultados da consulta do GitHub."""
+
+
+@dataclass(frozen=True)
+class DateInterval:
+    """Intervalo inclusivo de datas usado no filtro ``created``."""
+
+    start: date
+    end: date
+
+    @property
+    def github_created_filter(self) -> str:
+        return f"{self.start.isoformat()}..{self.end.isoformat()}"
+
+
+def monthly_intervals(start_date: date, end_date: date) -> list[DateInterval]:
+    """Divide uma janela inclusiva em meses reais do calendario."""
+
+    if type(start_date) is not date or type(end_date) is not date:
+        raise TypeError("start_date e end_date devem ser datas")
+    if start_date > end_date:
+        raise ValueError("start_date nao pode ser posterior a end_date")
+
+    intervals: list[DateInterval] = []
+    current = start_date
+    while current <= end_date:
+        last_day = monthrange(current.year, current.month)[1]
+        month_end = date(current.year, current.month, last_day)
+        interval_end = min(month_end, end_date)
+        intervals.append(DateInterval(current, interval_end))
+        current = interval_end + timedelta(days=1)
+    return intervals
 
 
 def discover_repositories(
@@ -34,6 +74,59 @@ def collect_workflows(client: GitHubClient, full_name: str) -> list[dict[str, An
         {"per_page": 100},
         item_key="workflows",
     )
+
+
+def collect_workflow_runs(
+    client: GitHubClient,
+    full_name: str,
+    *,
+    default_branch: str,
+    start_date: date,
+    end_date: date,
+) -> list[dict[str, Any]]:
+    """Coleta runs de push do default branch, por mes e sem duplicatas.
+
+    ``GitHubClient.paginate`` fornece cache, retomada, paginacao, rate limit e
+    backoff. O filtro local protege os calculos se a API devolver dados fora dos
+    parametros solicitados.
+    """
+
+    if not default_branch.strip():
+        raise ValueError("default_branch e obrigatorio")
+    owner, repository = _split_full_name(full_name)
+    path = f"/repos/{quote(owner)}/{quote(repository)}/actions/runs"
+    unique_runs: dict[object, dict[str, Any]] = {}
+
+    for interval in monthly_intervals(start_date, end_date):
+        month_runs = client.paginate(
+            path,
+            {
+                "branch": default_branch,
+                "event": "push",
+                "created": interval.github_created_filter,
+                "per_page": 100,
+            },
+            item_key="workflow_runs",
+        )
+        if len(month_runs) >= GITHUB_FILTERED_QUERY_LIMIT:
+            raise WorkflowRunWindowLimitError(
+                f"O intervalo {interval.github_created_filter} atingiu o teto de "
+                f"{GITHUB_FILTERED_QUERY_LIMIT} runs; subdivida-o para evitar "
+                "dados truncados."
+            )
+
+        for item in month_runs:
+            run = dict(item)
+            if run.get("event") != "push":
+                continue
+            if run.get("head_branch") != default_branch:
+                continue
+            run_id = run.get("id")
+            if run_id is None:
+                raise ValueError("workflow run sem id nao pode ser deduplicado")
+            unique_runs.setdefault(run_id, run)
+
+    return list(unique_runs.values())
 
 
 def count_contributors(client: GitHubClient, full_name: str) -> int:
@@ -67,7 +160,7 @@ def collect_releases(
     found_previous_main = False
 
     for response in client.iter_responses(
-        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 100}
+        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 30}
     ):
         if not isinstance(response.data, list):
             raise GitHubAPIError(

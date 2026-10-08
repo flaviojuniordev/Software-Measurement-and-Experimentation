@@ -8,6 +8,7 @@ import os
 import ssl
 import time
 from dataclasses import dataclass
+from http.client import IncompleteRead
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
 from urllib.error import HTTPError, URLError
@@ -187,7 +188,10 @@ class GitHubClient:
         request = Request(url, headers=headers, method="GET")
         raw = self._opener(request, timeout=self.timeout_seconds)
         try:
-            body = raw.read().decode("utf-8")
+            try:
+                body = raw.read().decode("utf-8")
+            except IncompleteRead as exc:
+                raise URLError("resposta HTTP incompleta durante leitura") from exc
             data = json.loads(body) if body else None
             return GitHubResponse(
                 url=url,

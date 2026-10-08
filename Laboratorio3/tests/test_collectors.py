@@ -14,11 +14,13 @@ class FakeClient:
     def __init__(self):
         self.responses = []
         self.paginated = []
+        self.iterated = []
 
     def get(self, path, params=None):
         return self.responses.pop(0)
 
     def iter_responses(self, path, params=None):
+        self.iterated.append((path, params))
         yield from self.responses
 
     def paginate(self, path, params=None, *, item_key=None, limit=None):
@@ -87,6 +89,7 @@ def test_collect_releases_keeps_window_and_one_previous_main_release():
         end_date=date(2025, 12, 31),
     )
 
+    assert client.iterated[0][1] == {"per_page": 30}
     assert [item["tag_name"] for item in releases] == ["v1", "rc", "v2"]
     assert [item["tag_name"] for item in main_releases_in_window(
         releases, date(2025, 1, 1), date(2025, 12, 31)

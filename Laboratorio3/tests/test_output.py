@@ -6,16 +6,19 @@ def test_build_funnel_counts_stages_and_reasons():
         {
             "workflows_count": 2,
             "task1_included": True,
+            "s01_included": True,
             "discard_reason": None,
         },
         {
             "workflows_count": 0,
             "task1_included": False,
+            "s01_included": False,
             "discard_reason": "no_github_actions",
         },
         {
             "workflows_count": 1,
             "task1_included": False,
+            "s01_included": False,
             "discard_reason": "insufficient_releases",
         },
     ]
@@ -26,7 +29,8 @@ def test_build_funnel_counts_stages_and_reasons():
         {"stage": "candidates_processed", "count": 3},
         {"stage": "with_github_actions", "count": 2},
         {"stage": "with_minimum_releases", "count": 1},
-        {"stage": "ready_for_task2", "count": 1},
+        {"stage": "with_minimum_workflow_runs", "count": 1},
+        {"stage": "included_s01", "count": 1},
     ]
     assert result["discard_reasons"] == {
         "insufficient_releases": 1,
