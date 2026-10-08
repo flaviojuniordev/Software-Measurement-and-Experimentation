@@ -7,7 +7,7 @@ from pipeline.collectors import (
     discover_repositories,
     main_releases_in_window,
 )
-from pipeline.github_client import GitHubResponse
+from pipeline.github_client import GitHubAPIError, GitHubResponse
 
 
 class FakeClient:
@@ -61,6 +61,19 @@ def test_count_contributors_uses_last_page():
     ]
 
     assert count_contributors(client, "a/b") == 42
+
+
+def test_count_contributors_marks_oversized_history_as_unavailable():
+    class OversizedHistoryClient:
+        def get(self, path, params=None):
+            raise GitHubAPIError(
+                403,
+                "https://api.github.com/repos/a/b/contributors",
+                "The history or contributor list is too large to list contributors "
+                "for this repository via the API.",
+            )
+
+    assert count_contributors(OversizedHistoryClient(), "a/b") is None
 
 
 def test_collect_releases_keeps_window_and_one_previous_main_release():

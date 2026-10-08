@@ -162,12 +162,17 @@ def _collect_workflow_runs_interval(
     )
 
 
-def count_contributors(client: GitHubClient, full_name: str) -> int:
+def count_contributors(client: GitHubClient, full_name: str) -> int | None:
     owner, repository = _split_full_name(full_name)
-    response = client.get(
-        f"/repos/{quote(owner)}/{quote(repository)}/contributors",
-        {"per_page": 1, "anon": True},
-    )
+    try:
+        response = client.get(
+            f"/repos/{quote(owner)}/{quote(repository)}/contributors",
+            {"per_page": 1, "anon": True},
+        )
+    except GitHubAPIError as exc:
+        if exc.status == 403 and "too large to list contributors" in str(exc):
+            return None
+        raise
     if not isinstance(response.data, list):
         return 0
     links = parse_link_header(response.headers.get("link"))

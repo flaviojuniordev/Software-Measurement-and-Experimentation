@@ -10,7 +10,7 @@
 | `created_at` | data/hora | UTC | Data de criacao do repositorio |
 | `age_days_at_window_end` | inteiro | dias | Diferenca entre o fim da janela e a criacao do repositorio |
 | `default_branch` | texto | - | Branch principal informada pela API |
-| `contributors_count` | inteiro | pessoas | Ultima pagina do endpoint de contribuidores |
+| `contributors_count` | inteiro ou vazio | pessoas | Ultima pagina do endpoint; vazio quando o GitHub recusa historicos grandes |
 | `workflows_count` | inteiro | workflows | Workflows cadastrados no GitHub Actions |
 | `releases_in_window` | inteiro | releases | Releases publicadas, sem draft ou prerelease, dentro da janela |
 | `workflow_runs_count` | inteiro | runs | Runs de `push` no default branch coletadas na janela, antes da classificacao de `conclusion` |
