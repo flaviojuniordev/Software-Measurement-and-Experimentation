@@ -98,22 +98,12 @@ def collect_workflow_runs(
     unique_runs: dict[object, dict[str, Any]] = {}
 
     for interval in monthly_intervals(start_date, end_date):
-        month_runs = client.paginate(
+        month_runs = _collect_workflow_runs_interval(
+            client,
             path,
-            {
-                "branch": default_branch,
-                "event": "push",
-                "created": interval.github_created_filter,
-                "per_page": 100,
-            },
-            item_key="workflow_runs",
+            default_branch=default_branch,
+            interval=interval,
         )
-        if len(month_runs) >= GITHUB_FILTERED_QUERY_LIMIT:
-            raise WorkflowRunWindowLimitError(
-                f"O intervalo {interval.github_created_filter} atingiu o teto de "
-                f"{GITHUB_FILTERED_QUERY_LIMIT} runs; subdivida-o para evitar "
-                "dados truncados."
-            )
 
         for item in month_runs:
             run = dict(item)
@@ -127,6 +117,49 @@ def collect_workflow_runs(
             unique_runs.setdefault(run_id, run)
 
     return list(unique_runs.values())
+
+
+def _collect_workflow_runs_interval(
+    client: GitHubClient,
+    path: str,
+    *,
+    default_branch: str,
+    interval: DateInterval,
+) -> list[dict[str, Any]]:
+    runs = list(
+        client.paginate(
+            path,
+            {
+                "branch": default_branch,
+                "event": "push",
+                "created": interval.github_created_filter,
+                "per_page": 100,
+            },
+            item_key="workflow_runs",
+        )
+    )
+    if len(runs) < GITHUB_FILTERED_QUERY_LIMIT:
+        return runs
+    if interval.start == interval.end:
+        raise WorkflowRunWindowLimitError(
+            f"O dia {interval.github_created_filter} atingiu o teto de "
+            f"{GITHUB_FILTERED_QUERY_LIMIT} runs e nao pode ser subdividido."
+        )
+
+    midpoint = interval.start + (interval.end - interval.start) // 2
+    first_half = DateInterval(interval.start, midpoint)
+    second_half = DateInterval(midpoint + timedelta(days=1), interval.end)
+    return _collect_workflow_runs_interval(
+        client,
+        path,
+        default_branch=default_branch,
+        interval=first_half,
+    ) + _collect_workflow_runs_interval(
+        client,
+        path,
+        default_branch=default_branch,
+        interval=second_half,
+    )
 
 
 def count_contributors(client: GitHubClient, full_name: str) -> int:

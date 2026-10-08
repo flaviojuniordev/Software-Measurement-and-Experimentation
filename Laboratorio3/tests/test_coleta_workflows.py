@@ -94,7 +94,28 @@ def test_coletor_rejeita_run_sem_id() -> None:
         )
 
 
-def test_coletor_detecta_mes_no_teto_da_api() -> None:
+def test_coletor_subdivide_mes_no_teto_da_api() -> None:
+    client = FakeGitHubClient(
+        [[run(item) for item in range(1_000)], [run(1)], [run(2)]]
+    )
+
+    result = collect_workflow_runs(
+        client,
+        "acme/project",
+        default_branch="main",
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 1, 31),
+    )
+
+    assert [item["id"] for item in result] == [1, 2]
+    assert [call[1]["created"] for call in client.calls] == [
+        "2025-01-01..2025-01-31",
+        "2025-01-01..2025-01-16",
+        "2025-01-17..2025-01-31",
+    ]
+
+
+def test_coletor_rejeita_um_unico_dia_no_teto_da_api() -> None:
     client = FakeGitHubClient([[run(item) for item in range(1_000)]])
     with pytest.raises(WorkflowRunWindowLimitError, match="atingiu o teto"):
         collect_workflow_runs(
@@ -102,5 +123,5 @@ def test_coletor_detecta_mes_no_teto_da_api() -> None:
             "acme/project",
             default_branch="main",
             start_date=date(2025, 1, 1),
-            end_date=date(2025, 1, 31),
+            end_date=date(2025, 1, 1),
         )
