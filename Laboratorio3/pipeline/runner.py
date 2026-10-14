@@ -36,12 +36,21 @@ from .metrics import (
 from .output import checkpoint, save_repository_payload
 
 
+PARTIAL_MAX_RELEASES = 50
+PARTIAL_MAX_WORKFLOW_RUNS = 5_000
+
+
 def run_pipeline(
     config: PipelineConfig,
     client: GitHubClient,
     *,
     progress: Callable[[str], None] = print,
+    target_included: int | None = None,
+    fast_partial: bool = False,
 ) -> dict[str, int]:
+    if target_included is not None and target_included < 1:
+        raise ValueError("target_included deve ser positivo")
+
     candidates = discover_repositories(
         client,
         minimum_stars=config.minimum_stars,
@@ -80,8 +89,13 @@ def run_pipeline(
                 selection_rows.append(selection)
                 checkpoint(config.output_dir, selection_rows, repository_rows)
                 continue
-
             selection["task1_included"] = True
+            if fast_partial and len(releases_in_window) > PARTIAL_MAX_RELEASES:
+                selection["discard_reason"] = "partial_release_volume_limit"
+                selection_rows.append(selection)
+                checkpoint(config.output_dir, selection_rows, repository_rows)
+                continue
+
             default_branch = repository.get("default_branch")
             if not isinstance(default_branch, str) or not default_branch:
                 raise ValueError("repositorio sem default_branch")
@@ -91,6 +105,8 @@ def run_pipeline(
                 default_branch=default_branch,
                 start_date=config.start_date,
                 end_date=config.end_date,
+                subdivide_large_windows=not fast_partial,
+                max_runs=PARTIAL_MAX_WORKFLOW_RUNS if fast_partial else None,
             )
             selection["workflow_runs_count"] = len(workflow_runs)
             selection["valid_workflow_runs_count"] = count_valid_workflow_runs(
@@ -183,6 +199,9 @@ def run_pipeline(
             progress(f"  erro: {exc}")
 
         checkpoint(config.output_dir, selection_rows, repository_rows)
+        if target_included is not None and len(repository_rows) >= target_included:
+            progress(f"Meta de {target_included} repositorios validos atingida.")
+            break
 
     return {
         "candidates": len(candidates),

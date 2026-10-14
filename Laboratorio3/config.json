@@ -1,7 +1,7 @@
 {
   "observation": {
-    "start_date": null,
-    "end_date": null
+    "start_date": "2025-10-01",
+    "end_date": "2026-09-30"
   },
   "collection": {
     "candidate_limit": 300,

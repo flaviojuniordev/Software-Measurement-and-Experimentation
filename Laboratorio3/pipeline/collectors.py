@@ -54,7 +54,7 @@ def discover_repositories(
     client: GitHubClient, *, minimum_stars: int, limit: int
 ) -> list[dict[str, Any]]:
     query = f"stars:>{minimum_stars}"
-    return client.paginate(
+    candidates = client.paginate(
         "/search/repositories",
         {
             "q": query,
@@ -63,8 +63,19 @@ def discover_repositories(
             "per_page": 100,
         },
         item_key="items",
-        limit=limit,
+        limit=min(limit + 100, 1_000),
     )
+    unique: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for repository in candidates:
+        full_name = repository.get("full_name")
+        if not isinstance(full_name, str) or not full_name or full_name in seen:
+            continue
+        seen.add(full_name)
+        unique.append(repository)
+        if len(unique) >= limit:
+            break
+    return unique
 
 
 def collect_workflows(client: GitHubClient, full_name: str) -> list[dict[str, Any]]:
@@ -83,6 +94,8 @@ def collect_workflow_runs(
     default_branch: str,
     start_date: date,
     end_date: date,
+    subdivide_large_windows: bool = True,
+    max_runs: int | None = None,
 ) -> list[dict[str, Any]]:
     """Coleta runs de push do default branch, por mes e sem duplicatas.
 
@@ -93,6 +106,8 @@ def collect_workflow_runs(
 
     if not default_branch.strip():
         raise ValueError("default_branch e obrigatorio")
+    if max_runs is not None and max_runs < 1:
+        raise ValueError("max_runs deve ser positivo")
     owner, repository = _split_full_name(full_name)
     path = f"/repos/{quote(owner)}/{quote(repository)}/actions/runs"
     unique_runs: dict[object, dict[str, Any]] = {}
@@ -103,6 +118,7 @@ def collect_workflow_runs(
             path,
             default_branch=default_branch,
             interval=interval,
+            subdivide_large_windows=subdivide_large_windows,
         )
 
         for item in month_runs:
@@ -115,6 +131,11 @@ def collect_workflow_runs(
             if run_id is None:
                 raise ValueError("workflow run sem id nao pode ser deduplicado")
             unique_runs.setdefault(run_id, run)
+        if max_runs is not None and len(unique_runs) > max_runs:
+            raise WorkflowRunWindowLimitError(
+                f"O repositorio ultrapassou {max_runs} workflow runs no modo "
+                "de amostra parcial."
+            )
 
     return list(unique_runs.values())
 
@@ -125,6 +146,7 @@ def _collect_workflow_runs_interval(
     *,
     default_branch: str,
     interval: DateInterval,
+    subdivide_large_windows: bool,
 ) -> list[dict[str, Any]]:
     runs = list(
         client.paginate(
@@ -140,6 +162,11 @@ def _collect_workflow_runs_interval(
     )
     if len(runs) < GITHUB_FILTERED_QUERY_LIMIT:
         return runs
+    if not subdivide_large_windows:
+        raise WorkflowRunWindowLimitError(
+            f"O intervalo {interval.github_created_filter} atingiu o teto de "
+            f"{GITHUB_FILTERED_QUERY_LIMIT} runs no modo de amostra parcial."
+        )
     if interval.start == interval.end:
         raise WorkflowRunWindowLimitError(
             f"O dia {interval.github_created_filter} atingiu o teto de "
@@ -154,11 +181,13 @@ def _collect_workflow_runs_interval(
         path,
         default_branch=default_branch,
         interval=first_half,
+        subdivide_large_windows=subdivide_large_windows,
     ) + _collect_workflow_runs_interval(
         client,
         path,
         default_branch=default_branch,
         interval=second_half,
+        subdivide_large_windows=subdivide_large_windows,
     )
 
 
@@ -198,7 +227,7 @@ def collect_releases(
     found_previous_main = False
 
     for response in client.iter_responses(
-        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 30}
+        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 100}
     ):
         if not isinstance(response.data, list):
             raise GitHubAPIError(

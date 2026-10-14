@@ -125,3 +125,35 @@ def test_coletor_rejeita_um_unico_dia_no_teto_da_api() -> None:
             start_date=date(2025, 1, 1),
             end_date=date(2025, 1, 1),
         )
+
+
+def test_coletor_parcial_nao_subdivide_mes_no_teto_da_api() -> None:
+    client = FakeGitHubClient([[run(item) for item in range(1_000)]])
+
+    with pytest.raises(WorkflowRunWindowLimitError, match="amostra parcial"):
+        collect_workflow_runs(
+            client,
+            "acme/project",
+            default_branch="main",
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 1, 31),
+            subdivide_large_windows=False,
+        )
+
+    assert len(client.calls) == 1
+
+
+def test_coletor_parcial_rejeita_volume_total_acima_do_limite() -> None:
+    client = FakeGitHubClient(
+        [[run(1), run(2), run(3)], [run(4), run(5), run(6)]]
+    )
+
+    with pytest.raises(WorkflowRunWindowLimitError, match="ultrapassou 4"):
+        collect_workflow_runs(
+            client,
+            "acme/project",
+            default_branch="main",
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 2, 28),
+            max_runs=4,
+        )

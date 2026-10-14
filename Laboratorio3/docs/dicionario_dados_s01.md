@@ -1,4 +1,8 @@
-# Dicionario de dados - Sprint 1
+# Dicionario de dados - Sprints 1 e 2
+
+O snapshot `repositories_s02_partial.csv` possui o mesmo esquema de
+`repositories_s01.csv`. Ele registra a amostra parcial de 30 repositorios da
+Sprint 2; nao representa a amostra final de 300 repositorios.
 
 ## `selection_funnel.csv`
 
@@ -17,7 +21,7 @@
 | `valid_workflow_runs_count` | inteiro | runs | Runs classificadas como sucesso ou falha e usadas nas metricas |
 | `task1_included` | booleano | - | Atende ao filtro de releases da coleta base |
 | `s01_included` | booleano | - | Atende tambem ao minimo de workflow runs validas da Sprint 1 |
-| `discard_reason` | texto ou vazio | - | Motivo do descarte no funil |
+| `discard_reason` | texto ou vazio | - | Motivo do descarte no funil, incluindo limites declarados do modo parcial |
 | `collection_error` | texto ou vazio | - | Mensagem registrada quando a coleta falha |
 
 ## `repositories_s01.csv`

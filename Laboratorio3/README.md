@@ -48,22 +48,33 @@ salvo no repositorio.
 
 ## Configuracao e comando unico
 
-As datas oficiais da janela ainda nao estao preenchidas no repositorio. Informe-as
-em `config.json` ou pela linha de comando:
+As datas da janela de 12 meses estao fixadas em `config.json`. A coleta completa
+pode ser executada com:
+
+```bash
+python3 -m pipeline --config config.json --limit 300
+```
+
+Para gerar a amostra parcial de 30 repositorios usada no checkpoint da Sprint 2:
 
 ```bash
 python3 -m pipeline \
   --config config.json \
-  --start-date "AAAA-MM-DD" \
-  --end-date "AAAA-MM-DD" \
-  --limit 300
+  --limit 300 \
+  --target-included 30 \
+  --fast-partial
 ```
 
-Depois de preencher `observation.start_date` e `observation.end_date` no arquivo:
+`--limit` controla quantos candidatos podem ser examinados. A opcao
+`--target-included` encerra a execucao quando o funil atingir a quantidade
+informada de repositorios validos; ela permite gerar amostras parciais sem
+confundir candidatos processados com repositorios aprovados.
 
-```bash
-python3 -m pipeline --config config.json
-```
+Para entregas parciais, `--fast-partial` registra e pula candidatos que atingem
+o teto de 1.000 workflow runs em algum mes, ultrapassam 5.000 runs na janela ou
+possuem mais de 50 releases. Isso evita que um unico repositorio extremo
+monopolize a execucao. A coleta definitiva deve omitir essa opcao para remover
+esses limites, subdividir os intervalos e produzir a amostra completa exigida.
 
 `config.json` tambem controla os limites de estrelas, releases e workflow runs,
 coleta de tags, diretorios, tentativas e timeout. Nenhuma data academica fica
@@ -110,10 +121,13 @@ armazenadas. Nao remova o cache durante uma execucao.
 - `data/selection_funnel_summary.csv`: totais por etapa;
 - `data/selection_funnel.json`: funil e motivos de descarte;
 - `data/repositories_s01.csv`: metricas de velocidade, estabilidade e DORA;
+- `data/repositories_s02_partial.csv`: snapshot validado com 30 repositorios
+  distintos para a entrega parcial da Sprint 2;
 - `data/raw/*.json`: repositorio, workflows, releases, tags, comparacoes e runs.
 
 O dicionario das colunas esta em `docs/dicionario_dados_s01.md`. A introducao e
-as hipoteses formuladas antes da coleta estao em `docs/introducao.md`.
+as hipoteses formuladas antes da coleta estao em `docs/introducao.md`. O protocolo
+e o funil da entrega parcial estao em `docs/metodologia_s02_parcial.md`.
 
 ## Testes e cobertura
 

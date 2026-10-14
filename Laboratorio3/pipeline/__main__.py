@@ -11,6 +11,13 @@ from .github_client import GitHubClient
 from .runner import run_pipeline
 
 
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("o valor deve ser positivo")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Pipeline DORA do Laboratorio 03")
     parser.add_argument("--config", default="config.json", help="arquivo JSON")
@@ -18,6 +25,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--end-date", help="fim oficial da janela (AAAA-MM-DD)")
     parser.add_argument(
         "--limit", type=int, help="numero de repositorios candidatos (padrao: 300)"
+    )
+    parser.add_argument(
+        "--target-included",
+        type=_positive_int,
+        help="encerra ao atingir esta quantidade de repositorios validos",
+    )
+    parser.add_argument(
+        "--fast-partial",
+        action="store_true",
+        help="pula candidatos com meses no teto de 1.000 workflow runs",
     )
     return parser
 
@@ -36,7 +53,12 @@ def main(argv: list[str] | None = None) -> int:
             max_retries=config.max_retries,
             timeout_seconds=config.request_timeout_seconds,
         )
-        summary = run_pipeline(config, client)
+        summary = run_pipeline(
+            config,
+            client,
+            target_included=args.target_included,
+            fast_partial=args.fast_partial,
+        )
     except (ConfigError, RuntimeError) as exc:
         print(f"Erro: {exc}", file=sys.stderr)
         return 2

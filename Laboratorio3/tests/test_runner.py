@@ -159,3 +159,70 @@ def test_runner_discards_repository_below_minimum_valid_runs(tmp_path, monkeypat
         rows = list(csv.DictReader(handle))
     assert rows[0]["discard_reason"] == "insufficient_workflow_runs"
     assert rows[0]["valid_workflow_runs_count"] == "49"
+
+
+def test_runner_stops_when_included_target_is_reached(tmp_path, monkeypatch):
+    candidates = [
+        {
+            "full_name": f"org/repository-{number}",
+            "stargazers_count": 5000 - number,
+            "language": "Python",
+            "created_at": "2020-01-01T00:00:00Z",
+            "default_branch": "main",
+        }
+        for number in range(3)
+    ]
+    releases = [make_release("v0", "2024-12-20T00:00:00Z")] + [
+        make_release(f"v{number}", f"2025-0{number}-10T00:00:00Z")
+        for number in range(1, 6)
+    ]
+    monkeypatch.setattr(
+        "pipeline.runner.discover_repositories", lambda *args, **kwargs: candidates
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.collect_workflows", lambda *args, **kwargs: [{"id": 1}]
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.count_contributors", lambda *args, **kwargs: 3
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.collect_releases", lambda *args, **kwargs: releases
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.collect_workflow_runs",
+        lambda *args, **kwargs: [
+            {
+                "id": number,
+                "workflow_id": 10,
+                "event": "push",
+                "head_branch": "main",
+                "conclusion": "success",
+                "run_started_at": f"2025-06-{(number % 28) + 1:02d}T10:00:00Z",
+                "updated_at": f"2025-06-{(number % 28) + 1:02d}T10:05:00Z",
+            }
+            for number in range(50)
+        ],
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.collect_tags", lambda *args, **kwargs: []
+    )
+    monkeypatch.setattr(
+        "pipeline.runner.collect_release_comparisons",
+        lambda *args, **kwargs: [],
+    )
+    config = PipelineConfig(
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        candidate_limit=3,
+        cache_dir=tmp_path / "cache",
+        output_dir=tmp_path / "data",
+    )
+
+    summary = run_pipeline(
+        config,
+        object(),
+        progress=lambda _message: None,
+        target_included=2,
+    )
+
+    assert summary == {"candidates": 3, "processed": 2, "included": 2}

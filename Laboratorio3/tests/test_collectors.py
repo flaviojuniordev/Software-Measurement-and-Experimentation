@@ -46,6 +46,19 @@ def test_discover_repositories_applies_limit():
     assert result == [{"full_name": "a/one"}]
 
 
+def test_discover_repositories_removes_pagination_duplicates():
+    client = FakeClient()
+    client.paginated = [[
+        {"full_name": "a/one"},
+        {"full_name": "a/one"},
+        {"full_name": "b/two"},
+    ]]
+
+    result = discover_repositories(client, minimum_stars=1000, limit=2)
+
+    assert result == [{"full_name": "a/one"}, {"full_name": "b/two"}]
+
+
 def test_count_contributors_uses_last_page():
     client = FakeClient()
     client.responses = [
@@ -102,7 +115,7 @@ def test_collect_releases_keeps_window_and_one_previous_main_release():
         end_date=date(2025, 12, 31),
     )
 
-    assert client.iterated[0][1] == {"per_page": 30}
+    assert client.iterated[0][1] == {"per_page": 100}
     assert [item["tag_name"] for item in releases] == ["v1", "rc", "v2"]
     assert [item["tag_name"] for item in main_releases_in_window(
         releases, date(2025, 1, 1), date(2025, 12, 31)
