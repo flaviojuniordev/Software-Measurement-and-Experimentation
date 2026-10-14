@@ -1,0 +1,30 @@
+{
+  "discard_reasons": {
+    "collection_error": 15,
+    "insufficient_releases": 49,
+    "insufficient_workflow_runs": 5,
+    "no_github_actions": 7
+  },
+  "stages": [
+    {
+      "count": 100,
+      "stage": "candidates_processed"
+    },
+    {
+      "count": 93,
+      "stage": "with_github_actions"
+    },
+    {
+      "count": 43,
+      "stage": "with_minimum_releases"
+    },
+    {
+      "count": 24,
+      "stage": "with_minimum_workflow_runs"
+    },
+    {
+      "count": 24,
+      "stage": "included_s01"
+    }
+  ]
+}

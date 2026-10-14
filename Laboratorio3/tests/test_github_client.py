@@ -86,34 +86,33 @@ def test_retries_server_error_with_exponential_backoff(tmp_path):
     assert sleeps == [1]
 
 
-def test_retries_truncated_http_response(tmp_path):
+def test_retries_incomplete_read_without_caching_partial_response(tmp_path):
     attempts = 0
     sleeps = []
+
+    class IncompleteRaw(FakeRaw):
+        def read(self):
+            raise IncompleteRead(b'{"partial":', 20)
 
     def opener(request, timeout):
         nonlocal attempts
         attempts += 1
         if attempts == 1:
-            return BrokenRaw()
-        return FakeRaw({"ok": True})
-
-    class BrokenRaw:
-        headers = {}
-        status = 200
-
-        def read(self):
-            raise IncompleteRead(b"partial", 10)
-
-        def close(self):
-            pass
+            return IncompleteRaw(None)
+        return FakeRaw({"complete": True})
 
     client = GitHubClient(
         "token", tmp_path, opener=opener, sleeper=sleeps.append, max_retries=2
     )
 
-    assert client.get("/large-response").data == {"ok": True}
+    first = client.get("/large-response")
+    second = client.get("/large-response")
+
+    assert first.data == {"complete": True}
+    assert second.from_cache is True
     assert attempts == 2
     assert sleeps == [1]
+    assert len(list(tmp_path.glob("*.json"))) == 1
 
 
 def test_waits_on_next_request_when_rate_limit_reaches_zero(tmp_path):

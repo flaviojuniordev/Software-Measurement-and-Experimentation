@@ -198,7 +198,7 @@ def collect_releases(
     found_previous_main = False
 
     for response in client.iter_responses(
-        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 100}
+        f"/repos/{quote(owner)}/{quote(repository)}/releases", {"per_page": 30}
     ):
         if not isinstance(response.data, list):
             raise GitHubAPIError(
