@@ -21,6 +21,8 @@ repositorios sem Actions, com menos de cinco releases publicadas ou com menos de
 - coleta mensal de workflow runs usando o mesmo cliente compartilhado;
 - filtro defensivo para `push` no default branch e deduplicacao por `run.id`;
 - CFR baseado em CI, episodios de falha, recuperacao e censura;
+- CFR por entrega com heuristica versionada de release corretiva e censura;
+- amostra-ouro reproduzivel, concordancia, consenso e avaliacao da heuristica;
 - classificacoes DORA individuais e classificacao geral;
 - checkpoints, dados brutos, testes sem rede e CI no GitHub Actions.
 
@@ -109,6 +111,106 @@ As regras ficam centralizadas em `pipeline.metrics`:
 - classificacoes usam Elite, High, Medium e Low; a geral usa a mediana das quatro
   pontuacoes, arredondada para baixo, e fica vazia se alguma metrica estiver ausente.
 
+O pipeline tambem exporta a variante de CFR por entrega nas colunas
+`release_change_failure_rate`, `release_cfr_evaluated`, `release_cfr_failed` e
+`release_cfr_censored`. A classificacao DORA existente continua baseada no CFR
+de CI; a nova variante e preservada separadamente para a RQ03(b).
+
+A heuristica corretiva inicial, identificada como `v1`, considera uma release
+corretiva quando ocorre pelo menos um destes criterios:
+
+- apenas o numero de patch aumenta em duas tags SemVer validas;
+- as release notes ou mensagens de commits contem `fix`, `hotfix` ou `revert`,
+  sem diferenciar maiusculas de minusculas.
+
+Uma release avaliada falha quando a proxima release principal e corretiva e foi
+publicada em ate sete dias. Releases dos sete ultimos dias da janela sao
+censuradas e ficam fora do denominador.
+
+## Validacao manual da heuristica
+
+Os comandos abaixo partem de `Laboratorio3`. O diretorio `data/raw` e produzido
+pela coleta e precisa conter o payload correspondente a cada repositorio do
+dataset. Os arquivos brutos e o cache permanecem locais e nao sao versionados.
+
+Para acrescentar o CFR por entrega a uma copia do checkpoint, sem sobrescrever o
+artefato consolidado pelo Flavio:
+
+```bash
+python -m pipeline.validation cfr \
+  --dataset data/repositories_s02_partial.csv \
+  --raw-dir data/raw \
+  --output data/repositories_s02_partial_luidi.csv \
+  --start-date 2025-10-01 \
+  --end-date 2026-09-30
+```
+
+O modo final sorteia exatamente 60 repositorios com `random_state=42` e falha
+claramente se o dataset tiver menos de 60:
+
+```bash
+python -m pipeline.validation gold-sample \
+  --dataset data/repositories_s02.csv \
+  --raw-dir data/raw \
+  --output-dir data/validation \
+  --start-date 2025-10-01 \
+  --end-date 2026-09-30
+```
+
+O checkpoint atual tem somente 30 repositorios. Seu uso exige a opcao explicita
+`--allow-partial`, e os dois templates gerados recebem o sufixo `_partial`:
+
+```bash
+python -m pipeline.validation gold-sample \
+  --dataset data/repositories_s02_partial.csv \
+  --raw-dir data/raw \
+  --output-dir data/validation \
+  --start-date 2025-10-01 \
+  --end-date 2026-09-30 \
+  --allow-partial
+```
+
+Os templates do Luidi deixam todos os julgamentos humanos vazios e nunca
+incluem a previsao da heuristica. Depois de Flavio e Luidi preencherem arquivos
+independentes, a concordancia e as pendencias sao geradas com:
+
+```bash
+python -m pipeline.validation agreement \
+  --flavio-repositories data/validation/flavio_repositories.csv \
+  --flavio-releases data/validation/flavio_releases.csv \
+  --luidi-repositories data/validation/luidi_repositories.csv \
+  --luidi-releases data/validation/luidi_releases.csv \
+  --output-dir data/validation/agreement
+```
+
+Com dois avaliadores nao existe maioria. Apos a reuniao, preencha as colunas
+`consensus_*` dos arquivos de pendencias e gere o consenso validado:
+
+```bash
+python -m pipeline.validation consensus \
+  --flavio-repositories data/validation/flavio_repositories.csv \
+  --flavio-releases data/validation/flavio_releases.csv \
+  --luidi-repositories data/validation/luidi_repositories.csv \
+  --luidi-releases data/validation/luidi_releases.csv \
+  --repository-resolutions data/validation/agreement/pending_repositories.csv \
+  --release-resolutions data/validation/agreement/pending_releases.csv \
+  --output-dir data/validation/consensus
+```
+
+Por fim, avalie precisao, recall, F1 e matriz de confusao contra o consenso:
+
+```bash
+python -m pipeline.validation evaluate \
+  --consensus-releases data/validation/consensus/consensus_releases.csv \
+  --raw-dir data/raw \
+  --history data/validation/heuristic_evaluations.json \
+  --version v1
+```
+
+Se o F1 ficar abaixo de 0,70, use um novo nome em `--version` e ajuste
+`--keywords` e/ou `--no-patch-rule`. Cada versao e acrescentada ao historico;
+uma versao existente nunca e substituida silenciosamente.
+
 ## Cache e retomada
 
 Cada resposta da API e armazenada em `.cache/github`. Executar novamente o mesmo
@@ -120,7 +222,8 @@ armazenadas. Nao remova o cache durante uma execucao.
 - `data/selection_funnel.csv`: decisao de inclusao por repositorio;
 - `data/selection_funnel_summary.csv`: totais por etapa;
 - `data/selection_funnel.json`: funil e motivos de descarte;
-- `data/repositories_s01.csv`: metricas de velocidade, estabilidade e DORA;
+- `data/repositories_s01.csv`: metricas de velocidade, estabilidade e DORA,
+  incluindo o CFR por entrega nas novas execucoes;
 - `data/repositories_s02_partial.csv`: snapshot validado com 30 repositorios
   distintos para a entrega parcial da Sprint 2;
 - `data/raw/*.json`: repositorio, workflows, releases, tags, comparacoes e runs.
@@ -140,8 +243,10 @@ python3 -m pytest
 chamada real a API e feita. O mesmo comando e executado por
 `.github/workflows/lab03-tests.yml` em pushes e pull requests que alterem o Lab03.
 
-## Escopo ainda nao implementado
+## Escopo ainda pendente
 
-Permanecem para as proximas etapas o CFR por release corretiva e sua validacao
-manual, a amostra final da Sprint 2 e as analises estatisticas de RQ05 a RQ07.
-Esses itens nao fazem parte da integracao atual.
+O codigo de validacao esta pronto, mas kappas, consenso e precisao/recall/F1 so
+podem ser produzidos depois dos julgamentos humanos independentes. A amostra
+final da Sprint 2 ainda precisa ser ampliada para pelo menos 300 repositorios; a
+amostra-ouro definitiva tera 60 repositorios sorteados desse dataset. Tambem
+permanecem para etapas posteriores as analises estatisticas de RQ05 a RQ07.

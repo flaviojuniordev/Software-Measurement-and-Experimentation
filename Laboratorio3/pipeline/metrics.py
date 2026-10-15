@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from statistics import median
 from typing import Any, Iterable, Mapping
@@ -14,6 +15,15 @@ from typing import Any, Iterable, Mapping
 WEEKS_PER_YEAR = 52.1
 MONTHS_PER_YEAR = 12
 ONE_RELEASE_PER_MONTH_WEEKLY = MONTHS_PER_YEAR / WEEKS_PER_YEAR
+RELEASE_CORRECTIVE_HEURISTIC_VERSION = "v1"
+RELEASE_CORRECTIVE_KEYWORDS = ("fix", "hotfix", "revert")
+_SEMVER_PATTERN = re.compile(
+    r"^[vV]?(?P<major>0|[1-9]\d*)\."
+    r"(?P<minor>0|[1-9]\d*)\."
+    r"(?P<patch>0|[1-9]\d*)"
+    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
 
 
 class RunResult(str, Enum):
@@ -53,6 +63,50 @@ class RecoverySummary:
     censored_episodes: int
     censored_proportion: float | None
     median_recovery_hours: float | None
+
+
+@dataclass(frozen=True)
+class CorrectiveReleaseHeuristic:
+    """Criterios versionados para identificar uma release corretiva."""
+
+    version: str = RELEASE_CORRECTIVE_HEURISTIC_VERSION
+    keywords: tuple[str, ...] = RELEASE_CORRECTIVE_KEYWORDS
+    patch_only: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.version.strip():
+            raise ValueError("a versao da heuristica e obrigatoria")
+        normalized = tuple(
+            keyword.strip().lower() for keyword in self.keywords if keyword.strip()
+        )
+        if not normalized and not self.patch_only:
+            raise ValueError("a heuristica precisa ter ao menos um criterio")
+        object.__setattr__(self, "keywords", normalized)
+
+    def criteria(self) -> dict[str, Any]:
+        return {
+            "version": self.version,
+            "patch_only_semver": self.patch_only,
+            "keywords_case_insensitive": list(self.keywords),
+        }
+
+
+@dataclass(frozen=True)
+class ReleaseCFRSummary:
+    """Resumo do CFR por entrega, com censura explicita."""
+
+    release_change_failure_rate: float | None
+    release_cfr_evaluated: int
+    release_cfr_failed: int
+    release_cfr_censored: int
+
+    def as_dict(self) -> dict[str, float | int | None]:
+        return {
+            "release_change_failure_rate": self.release_change_failure_rate,
+            "release_cfr_evaluated": self.release_cfr_evaluated,
+            "release_cfr_failed": self.release_cfr_failed,
+            "release_cfr_censored": self.release_cfr_censored,
+        }
 
 
 SUCCESS_CONCLUSIONS = {"success"}
@@ -138,6 +192,155 @@ def lead_time_summary(comparisons: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "lead_time_release_observations": len(per_release),
         "lead_time_commit_observations": len(per_commit),
     }
+
+
+def is_patch_only_semver(previous_tag: object, current_tag: object) -> bool:
+    """Retorna verdadeiro quando somente o patch SemVer aumenta."""
+
+    if not isinstance(previous_tag, str) or not isinstance(current_tag, str):
+        return False
+    previous = _SEMVER_PATTERN.fullmatch(previous_tag.strip())
+    current = _SEMVER_PATTERN.fullmatch(current_tag.strip())
+    if previous is None or current is None:
+        return False
+    previous_version = tuple(
+        int(previous.group(part)) for part in ("major", "minor", "patch")
+    )
+    current_version = tuple(
+        int(current.group(part)) for part in ("major", "minor", "patch")
+    )
+    return (
+        current_version[:2] == previous_version[:2]
+        and current_version[2] > previous_version[2]
+    )
+
+
+def classify_corrective_release(
+    previous_release: Mapping[str, Any],
+    current_release: Mapping[str, Any],
+    commit_messages: Iterable[object] = (),
+    *,
+    heuristic: CorrectiveReleaseHeuristic | None = None,
+) -> bool:
+    """Aplica a heuristica versionada a uma release e sua antecessora.
+
+    A versao inicial (``v1``) aceita mudanca apenas de patch SemVer ou os
+    termos ``fix``, ``hotfix`` e ``revert`` nas notas ou mensagens de commit,
+    sem diferenciar maiusculas de minusculas.
+    """
+
+    selected = heuristic or CorrectiveReleaseHeuristic()
+    if selected.patch_only and is_patch_only_semver(
+        previous_release.get("tag_name"), current_release.get("tag_name")
+    ):
+        return True
+
+    texts = [current_release.get("body"), *commit_messages]
+    return any(
+        _contains_corrective_keyword(text, selected.keywords) for text in texts
+    )
+
+
+def calculate_release_change_failure_rate(
+    releases: Iterable[Mapping[str, Any]],
+    comparisons: Iterable[Mapping[str, Any]],
+    start_date: date,
+    end_date: date,
+    *,
+    heuristic: CorrectiveReleaseHeuristic | None = None,
+) -> ReleaseCFRSummary:
+    """Calcula o CFR por entrega com seguimento de sete dias.
+
+    A release avaliada falha quando a proxima release principal e corretiva e
+    ocorre em ate sete dias. Releases dos sete ultimos dias da janela sao
+    censuradas e excluidas do denominador.
+    """
+
+    if start_date > end_date:
+        raise ValueError("start_date deve ser anterior ou igual a end_date")
+    selected = heuristic or CorrectiveReleaseHeuristic()
+    main_releases = sorted(
+        (
+            release
+            for release in releases
+            if not release.get("draft")
+            and not release.get("prerelease")
+            and release.get("published_at")
+            and release.get("tag_name")
+        ),
+        key=lambda release: parse_github_datetime(
+            release["published_at"], "published_at"
+        ),
+    )
+    comparison_by_head = {
+        comparison.get("head_tag"): comparison
+        for comparison in comparisons
+        if comparison.get("head_tag")
+    }
+    in_window = [
+        release
+        for release in main_releases
+        if start_date
+        <= parse_github_datetime(release["published_at"], "published_at").date()
+        <= end_date
+    ]
+    censored_cutoff = end_date - timedelta(days=7)
+    censored = sum(
+        parse_github_datetime(release["published_at"], "published_at").date()
+        > censored_cutoff
+        for release in in_window
+    )
+    evaluated = len(in_window) - censored
+    failed = 0
+
+    for current_index, release in enumerate(main_releases):
+        published_at = parse_github_datetime(
+            release["published_at"], "published_at"
+        )
+        if not start_date <= published_at.date() <= end_date:
+            continue
+        if published_at.date() > censored_cutoff:
+            continue
+        if current_index + 1 >= len(main_releases):
+            continue
+        following = main_releases[current_index + 1]
+        following_at = parse_github_datetime(
+            following["published_at"], "published_at"
+        )
+        if following_at - published_at > timedelta(days=7):
+            continue
+        comparison = comparison_by_head.get(following["tag_name"], {})
+        messages = [
+            commit.get("message")
+            for commit in comparison.get("commits", [])
+            if isinstance(commit, Mapping)
+        ]
+        if classify_corrective_release(
+            release, following, messages, heuristic=selected
+        ):
+            failed += 1
+
+    return ReleaseCFRSummary(
+        release_change_failure_rate=failed / evaluated if evaluated else None,
+        release_cfr_evaluated=evaluated,
+        release_cfr_failed=failed,
+        release_cfr_censored=censored,
+    )
+
+
+def _contains_corrective_keyword(text: object, keywords: tuple[str, ...]) -> bool:
+    if not isinstance(text, str) or not text:
+        return False
+    for keyword in keywords:
+        escaped = re.escape(keyword)
+        suffix = r"(?:e[ds]|ing)?" if keyword == "fix" else r"(?:ed|ing|s)?"
+        if re.search(
+            rf"(?<![a-z0-9]){escaped}{suffix}(?![a-z0-9])",
+            text,
+            flags=re.IGNORECASE,
+        ):
+            return True
+    return False
 
 
 def classify_run_conclusion(conclusion: object) -> RunResult:

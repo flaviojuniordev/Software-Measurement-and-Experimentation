@@ -1,8 +1,10 @@
 # Dicionario de dados - Sprints 1 e 2
 
-O snapshot `repositories_s02_partial.csv` possui o mesmo esquema de
-`repositories_s01.csv`. Ele registra a amostra parcial de 30 repositorios da
-Sprint 2; nao representa a amostra final de 300 repositorios.
+O snapshot `repositories_s02_partial.csv` registra a amostra parcial de 30
+repositorios da Sprint 2; nao representa a amostra final de 300 repositorios.
+Novas execucoes do pipeline acrescentam as quatro colunas do CFR por entrega. O
+comando `pipeline.validation cfr` permite gerar uma copia enriquecida do
+snapshot existente sem sobrescrever o artefato consolidado.
 
 ## `selection_funnel.csv`
 
@@ -36,6 +38,10 @@ Sprint 2; nao representa a amostra final de 300 repositorios.
 | `lead_time_commit_observations` | inteiro | commits | Commits utilizados na variante por commit |
 | `compare_errors` | inteiro | comparacoes | Comparacoes ignoradas devido a erro da API |
 | `ci_change_failure_rate` | decimal ou vazio | proporcao 0-1 | Falhas de CI / (falhas + sucessos) |
+| `release_change_failure_rate` | decimal ou vazio | proporcao 0-1 | Releases seguidas em ate 7 dias por release corretiva / releases avaliadas |
+| `release_cfr_evaluated` | inteiro | releases | Releases da janela fora dos sete dias finais e, portanto, avaliaveis |
+| `release_cfr_failed` | inteiro | releases | Releases avaliadas cuja proxima release foi corretiva em ate sete dias |
+| `release_cfr_censored` | inteiro | releases | Releases publicadas nos sete ultimos dias da janela e excluidas do denominador |
 | `failure_episodes_total` | inteiro | episodios | Episodios iniciados por falha apos sucesso, agrupados por workflow |
 | `failure_episodes_recovered` | inteiro | episodios | Episodios encerrados por sucesso posterior do mesmo workflow |
 | `failure_episodes_censored` | inteiro | episodios | Episodios sem sucesso posterior dentro da janela |

@@ -49,6 +49,51 @@ Quatro repositorios nao possuem mediana de recuperacao porque nenhum episodio de
 falha recuperado foi observado na janela. Esses valores permanecem vazios em vez
 de serem convertidos artificialmente em zero.
 
+## Heuristica de release corretiva e CFR por entrega
+
+A heuristica inicial e versionada como `v1`. Ela marca uma release como
+corretiva quando pelo menos um dos criterios abaixo e satisfeito:
+
+1. as tags anterior e atual seguem SemVer e apenas o numero de patch aumenta;
+2. as release notes ou uma mensagem de commit entre as releases contem os
+   termos `fix`, `hotfix` ou `revert`, sem diferenciar maiusculas de minusculas.
+
+Para o CFR por entrega, uma release R falha se a proxima release principal for
+classificada como corretiva e ocorrer no maximo sete dias depois. Releases
+publicadas nos sete ultimos dias da janela sao censuradas e excluidas do
+denominador. O pipeline registra separadamente releases avaliadas, falhas e
+censuradas, alem da taxa `falhas / avaliadas`. O CFR de CI permanece disponivel
+como a outra variante obrigatoria da RQ03.
+
+## Protocolo da amostra-ouro
+
+O script usa a semente fixa `random_state=42`. No modo final, ele sorteia
+exatamente 60 repositorios do dataset definitivo e cinco releases principais de
+cada repositorio. Se houver menos de 60 repositorios, o modo final termina com
+erro. O modo `--allow-partial` e deliberadamente separado: neste checkpoint ele
+usa os 30 repositorios disponiveis e identifica os templates com o sufixo
+`_partial`.
+
+Flavio e Luidi rotulam seus proprios arquivos de modo cego e independente. Os
+templates nao exibem a classificacao da heuristica. Cada avaliador registra o
+tipo do projeto, se releases representam entregas reais e, para as cinco
+releases sorteadas, se cada uma e corretiva. Nenhum rotulo e preenchido
+automaticamente.
+
+Depois da rotulagem, o script calcula o kappa de Fleiss exigido pelo enunciado e
+o kappa de Cohen como complemento apropriado aos dois avaliadores atualmente
+previstos, nas tres dimensoes. Com dois avaliadores nao existe maioria: toda
+divergencia e exportada como pendencia e so recebe consenso depois de discussao
+em reuniao. O gerador de consenso rejeita qualquer pendencia sem resolucao
+humana explicita.
+
+O consenso de releases e a referencia para avaliar a heuristica. O script
+calcula precisao, recall, F1 e a matriz de confusao. Cada versao registra seus
+criterios e resultados em um historico cumulativo. Se o F1 ficar abaixo de
+0,70, uma nova versao pode ser definida e comparada, sem substituir a anterior.
+Enquanto os dois arquivos independentes e o consenso nao existirem, nenhum
+kappa, consenso ou resultado de classificacao e apresentado.
+
 ## Artefatos
 
 - `data/repositories_s02_partial.csv`: dataset parcial com 30 repositorios;
@@ -57,6 +102,7 @@ de serem convertidos artificialmente em zero.
 - `data/selection_funnel.json`: resumo e motivos de descarte;
 - `docs/dicionario_dados_s01.md`: definicao, tipo e unidade das colunas.
 
-A heuristica de release corretiva, a validacao manual e o consenso da
-amostra-ouro pertencem ao outro card da Sprint 2 e nao sao apresentados como
-concluidos neste checkpoint.
+O checkpoint continua parcial: tem 30 repositorios, enquanto o requisito final
+e uma amostra de pelo menos 300 repositorios e uma amostra-ouro de 60 sorteada
+do dataset definitivo. Os resultados humanos e estatisticos permanecem
+pendentes ate a conclusao da rotulagem independente.

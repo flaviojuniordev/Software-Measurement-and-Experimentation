@@ -21,6 +21,7 @@ from .github_client import GitHubAPIError, GitHubClient
 from .metrics import (
     DoraLevel,
     calculate_ci_change_failure_rate,
+    calculate_release_change_failure_rate,
     classify_change_failure_rate,
     classify_deployment_frequency,
     classify_lead_time,
@@ -134,6 +135,12 @@ def run_pipeline(
                 releases, config.start_date, config.end_date
             )
             cfr = calculate_ci_change_failure_rate(workflow_runs)
+            release_cfr = calculate_release_change_failure_rate(
+                releases,
+                comparisons,
+                config.start_date,
+                config.end_date,
+            )
             recovery = summarize_recovery(find_failure_episodes(workflow_runs))
             deployment_level = classify_deployment_frequency(
                 deployment_frequency_value
@@ -160,6 +167,7 @@ def run_pipeline(
                     bool(comparison.get("error")) for comparison in comparisons
                 ),
                 "ci_change_failure_rate": cfr,
+                **release_cfr.as_dict(),
                 "failure_episodes_total": recovery.total_episodes,
                 "failure_episodes_recovered": recovery.recovered_episodes,
                 "failure_episodes_censored": recovery.censored_episodes,

@@ -102,6 +102,10 @@ def test_runner_integrates_funnel_metrics_and_checkpoints(tmp_path, monkeypatch)
     assert repository_rows[0]["full_name"] == "org/included"
     assert float(repository_rows[0]["lead_time_release_median_hours"]) == 24
     assert float(repository_rows[0]["ci_change_failure_rate"]) == 0
+    assert float(repository_rows[0]["release_change_failure_rate"]) == 0
+    assert int(repository_rows[0]["release_cfr_evaluated"]) == 5
+    assert int(repository_rows[0]["release_cfr_failed"]) == 0
+    assert int(repository_rows[0]["release_cfr_censored"]) == 0
     assert int(repository_rows[0]["valid_workflow_runs_count"]) == 50
 
     funnel = json.loads(
