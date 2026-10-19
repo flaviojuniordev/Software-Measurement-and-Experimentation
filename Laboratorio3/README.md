@@ -12,23 +12,28 @@ repositorios sem Actions, com menos de cinco releases publicadas ou com menos de
 
 ## Funcionalidades implementadas
 
-- cliente REST proprio, sem PyGithub, com HTTPS via `certifi`;
+- cliente REST/GraphQL proprio, sem PyGithub, com HTTPS via `certifi`;
 - autenticacao por `GITHUB_TOKEN`;
-- paginacao, cache, retomada, rate limit e backoff exponencial;
+- paginacao, cache comprimido, retomada, rate limit e backoff exponencial;
+- descoberta por faixas de estrelas, sem o teto de 1.000 resultados da busca;
 - selecao de candidatos, metadados, contribuidores e funil;
-- coleta de releases, tags e commits entre releases;
+- releases por GraphQL, com fallback REST paginado em lotes de 30;
+- tags e commits por Git parcial, sem blobs, com fallback para a API REST;
 - deployment frequency e lead time por release e por commit;
-- coleta mensal de workflow runs usando o mesmo cliente compartilhado;
+- coleta adaptativa de workflow runs, subdividindo somente intervalos com 1.000
+  ou mais resultados;
 - filtro defensivo para `push` no default branch e deduplicacao por `run.id`;
 - CFR baseado em CI, episodios de falha, recuperacao e censura;
 - CFR por entrega com heuristica versionada de release corretiva e censura;
 - amostra-ouro reproduzivel, concordancia, consenso e avaliacao da heuristica;
 - classificacoes DORA individuais e classificacao geral;
-- checkpoints, dados brutos, testes sem rede e CI no GitHub Actions.
+- checkpoint transacional em SQLite, dados brutos normalizados e exportacao em
+  Apache Parquet;
+- testes sem rede e CI no GitHub Actions.
 
 ## Preparacao
 
-Requer Python 3.12 ou superior. A partir da raiz do repositorio:
+Requer Python 3.12 ou superior e Git instalado. A partir da raiz do repositorio:
 
 ```bash
 cd Laboratorio3
@@ -54,7 +59,7 @@ As datas da janela de 12 meses estao fixadas em `config.json`. A coleta completa
 pode ser executada com:
 
 ```bash
-python3 -m pipeline --config config.json --limit 300
+python3 -m pipeline --config config.json
 ```
 
 Para gerar a amostra parcial de 30 repositorios usada no checkpoint da Sprint 2:
@@ -67,32 +72,59 @@ python3 -m pipeline \
   --fast-partial
 ```
 
-`--limit` controla quantos candidatos podem ser examinados. A opcao
+Por padrao, `config.json` permite examinar ate 4.000 candidatos e encerra a
+coleta quando 300 repositorios validos forem incluidos. `--limit` substitui o
+limite de candidatos, nao o tamanho da amostra final. A opcao
 `--target-included` encerra a execucao quando o funil atingir a quantidade
 informada de repositorios validos; ela permite gerar amostras parciais sem
 confundir candidatos processados com repositorios aprovados.
 
 Para entregas parciais, `--fast-partial` registra e pula candidatos que atingem
-o teto de 1.000 workflow runs em algum mes, ultrapassam 5.000 runs na janela ou
-possuem mais de 50 releases. Isso evita que um unico repositorio extremo
+o teto de 1.000 workflow runs no intervalo consultado, ultrapassam 5.000 runs na
+janela ou possuem mais de 50 releases. Isso evita que um unico repositorio extremo
 monopolize a execucao. A coleta definitiva deve omitir essa opcao para remover
 esses limites, subdividir os intervalos e produzir a amostra completa exigida.
 
 `config.json` tambem controla os limites de estrelas, releases e workflow runs,
-coleta de tags, diretorios, tentativas e timeout. Nenhuma data academica fica
-oculta no codigo.
+coleta de tags, uso do transporte Git, diretorio do cache Git, exportacao
+Parquet, tentativas e timeout. Nenhuma data academica fica oculta no codigo.
+
+## Arquitetura otimizada da coleta
+
+A otimizacao altera o transporte e a persistencia, nao os filtros, a janela nem
+as formulas do experimento:
+
+| Dado | Fonte principal | Salvaguarda |
+|---|---|---|
+| candidatos, repositorio, contribuidores e workflows | REST | cache e retry |
+| releases publicadas | GraphQL com campos minimos | REST, `per_page=30` |
+| workflow runs | REST por intervalo adaptativo | subdivisao antes do teto de 1.000 |
+| tags | `git ls-remote --tags` | REST paginado |
+| commits entre releases | fetch Git parcial das duas tags e `git log` | endpoint REST `compare` |
+
+O cache Git e bare e fica em `.cache/git`. Para cada par de releases sao
+baixados somente os objetos necessarios, com `--filter=blob:none`; o conteudo
+dos arquivos nao e usado. A equivalencia foi verificada em uma comparacao real
+do repositorio `psf/requests`: Git e REST retornaram os mesmos 128 SHAs. Essa
+estrategia preserva os dados usados nas metricas e evita armazenar respostas
+REST gigantes de comparacoes.
+
+O SQLite registra cada repositorio concluido e permite retomar no proximo
+candidato depois de uma interrupcao. Os CSVs continuam sendo os artefatos
+academicos; Parquet e uma representacao normalizada adicional para leitura e
+analise eficientes.
 
 ## Coleta de workflow runs
 
-`pipeline.collectors.collect_workflow_runs` divide a janela inclusiva por meses
-reais do calendario. Cada consulta usa `branch=<default_branch>`, `event=push` e
-`created=<inicio>..<fim>`, e e executada por `GitHubClient.paginate`. Assim, a
-coleta reutiliza automaticamente paginacao, cache, retomada, rate limit e backoff.
+`pipeline.collectors.collect_workflow_runs` inicia com toda a janela inclusiva.
+Cada consulta usa `branch=<default_branch>`, `event=push` e
+`created=<inicio>..<fim>`. Se o `total_count` indicar 1.000 resultados ou mais,
+o intervalo e dividido ao meio antes de buscar as paginas restantes. O processo
+continua recursivamente ate cada consulta ficar abaixo do teto do GitHub.
 
 Os resultados ainda sao validados localmente e deduplicados por `run.id`. Se um
-mes atingir o teto de 1.000 resultados imposto pelo GitHub para uma consulta
-filtrada, o repositorio e registrado como erro de coleta em vez de produzir uma
-metrica silenciosamente truncada.
+unico dia atingir o teto de 1.000 resultados, a coleta falha explicitamente em
+vez de produzir uma metrica silenciosamente truncada.
 
 ## CFR, recuperacao e classificacao
 
@@ -213,9 +245,16 @@ uma versao existente nunca e substituida silenciosamente.
 
 ## Cache e retomada
 
-Cada resposta da API e armazenada em `.cache/github`. Executar novamente o mesmo
-comando reutiliza as respostas e continua os checkpoints sem repetir chamadas ja
-armazenadas. Nao remova o cache durante uma execucao.
+Cada resposta completa da API e armazenada comprimida em `.cache/github` com a
+extensao `.json.gz`; caches antigos `.json` continuam legiveis. A gravacao usa
+arquivo temporario e troca atomica, portanto respostas interrompidas nao entram
+no cache. `IncompleteRead`, erros HTTP transitorios e JSON incompleto reutilizam
+o mesmo retry/backoff do cliente.
+
+O arquivo `data/collection_state.sqlite3` guarda, em transacao, os repositorios
+ja concluidos e seus registros normalizados. Executar novamente o mesmo comando
+reaproveita o cache HTTP, o cache Git e esse estado, continuando sem recoletar os
+repositorios finalizados. Nao remova esses artefatos durante uma execucao.
 
 ## Saidas
 
@@ -227,6 +266,9 @@ armazenadas. Nao remova o cache durante uma execucao.
 - `data/repositories_s02_partial.csv`: snapshot validado com 30 repositorios
   distintos para a entrega parcial da Sprint 2;
 - `data/raw/*.json`: repositorio, workflows, releases, tags, comparacoes e runs.
+- `data/collection_state.sqlite3`: checkpoint transacional para retomada;
+- `data/parquet/*.parquet`: tabelas normalizadas adicionais, comprimidas com
+  Zstandard, para analise eficiente.
 
 O dicionario das colunas esta em `docs/dicionario_dados_s01.md`. A introducao e
 as hipoteses formuladas antes da coleta estao em `docs/introducao.md`. O protocolo
@@ -245,8 +287,9 @@ chamada real a API e feita. O mesmo comando e executado por
 
 ## Escopo ainda pendente
 
-O codigo de validacao esta pronto, mas kappas, consenso e precisao/recall/F1 so
+O codigo de coleta e validacao esta pronto, mas kappas, consenso e
+precisao/recall/F1 so
 podem ser produzidos depois dos julgamentos humanos independentes. A amostra
-final da Sprint 2 ainda precisa ser ampliada para pelo menos 300 repositorios; a
+final da Sprint 2 ainda precisa ser coletada ate pelo menos 300 repositorios; a
 amostra-ouro definitiva tera 60 repositorios sorteados desse dataset. Tambem
 permanecem para etapas posteriores as analises estatisticas de RQ05 a RQ07.

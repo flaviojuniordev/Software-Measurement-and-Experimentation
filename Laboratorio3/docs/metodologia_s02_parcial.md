@@ -9,8 +9,10 @@ devem ser interpretados como a amostra completa.
 
 ## Fonte e janela
 
-Os dados foram obtidos pela API REST publica do GitHub, usando cliente proprio,
-token em variavel de ambiente, paginacao, cache e retomada. A janela fixa cobre
+O checkpoint original foi obtido pela API REST publica do GitHub. A coleta
+definitiva preserva as mesmas fontes semanticas, filtros e janela, mas usa REST,
+GraphQL e o protocolo Git conforme o tipo de dado. O cliente usa token em
+variavel de ambiente, paginacao, cache e retomada. A janela fixa cobre
 2025-10-01 a 2026-09-30, totalizando 12 meses. Foram considerados apenas runs de
 `push` no default branch e releases publicadas que nao eram draft ou prerelease.
 
@@ -35,8 +37,32 @@ volume de releases do modo parcial.
 Para impedir que um unico projeto muito ativo consumisse toda a janela da
 entrega, o comando usou `--fast-partial`. Nesse modo, o repositorio e descartado,
 sem gerar linha truncada, quando possui mais de 50 releases, mais de 5.000 runs
-na janela ou quando um mes atinge o teto de 1.000 runs da consulta filtrada. A
+na janela ou quando o intervalo consultado atinge o teto de 1.000 runs. A
 coleta final deve omitir essa opcao e processar os intervalos subdivididos.
+
+## Estrategia de coleta definitiva otimizada
+
+A mudanca de arquitetura nao altera a metodologia academica. Ela reduz o volume
+transferido e torna interrupcoes recuperaveis:
+
+1. a busca de candidatos percorre faixas de estrelas para superar o limite de
+   1.000 resultados de uma unica busca do GitHub;
+2. releases usam GraphQL com apenas os campos necessarios; o fallback REST usa
+   paginas de 30 itens;
+3. workflow runs comecam em uma consulta anual e o intervalo e subdividido
+   recursivamente quando o `total_count` alcanca o teto de 1.000;
+4. tags usam `git ls-remote`, sem checkout, e possuem fallback REST;
+5. commits entre duas releases sao obtidos de um repositorio bare parcial,
+   baixando as tags envolvidas sem blobs e executando `git log`; o endpoint
+   REST `compare` permanece como fallback;
+6. respostas completas sao comprimidas, e um checkpoint SQLite registra cada
+   repositorio concluido. Tabelas Parquet normalizadas sao exportadas como
+   representacao adicional aos CSVs e JSONs exigidos.
+
+A equivalencia do caminho Git foi validada em `psf/requests`, entre as tags
+`v2.31.0` e `v2.32.0`: tanto Git quanto REST retornaram exatamente os mesmos
+128 SHAs. Essa validacao verifica o conjunto que alimenta o lead time, sem mudar
+as regras de inclusao ou as formulas DORA.
 
 ## Metricas e integridade
 

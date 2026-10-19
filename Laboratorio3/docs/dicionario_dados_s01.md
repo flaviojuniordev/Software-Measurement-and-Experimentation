@@ -30,7 +30,7 @@ snapshot existente sem sobrescrever o artefato consolidado.
 
 | Coluna | Tipo | Unidade | Definicao ou formula |
 |---|---|---|---|
-| `tags_count` | inteiro | tags | Quantidade de tags retornadas pela API |
+| `tags_count` | inteiro | tags | Quantidade de tags obtidas por `git ls-remote`, com fallback para a API REST |
 | `deployment_frequency_per_week` | decimal | releases/semana | Releases principais na janela / semanas da janela |
 | `lead_time_release_median_hours` | decimal ou vazio | horas | Mediana de `release - commit mais antigo` por release |
 | `lead_time_commit_median_hours` | decimal ou vazio | horas | Mediana de `release - commit` para todos os commits |
@@ -56,3 +56,13 @@ snapshot existente sem sobrescrever o artefato consolidado.
 As demais colunas repetem os metadados documentados no funil. Valores vazios
 representam ausencia de observacoes suficientes; o pipeline nao fabrica zero nem
 uma classificacao geral quando alguma das quatro metricas esta ausente.
+
+## Tabelas Parquet normalizadas
+
+O diretorio `data/parquet` contem uma representacao adicional e comprimida dos
+dados de coleta. Ela nao substitui os CSVs academicos. As tabelas
+`repository_metadata`, `workflows`, `releases`, `tags`, `workflow_runs`,
+`release_comparisons` e `release_commits` usam `full_name` como chave de origem.
+As tabelas `repositories` e `selection_funnel` espelham as saidas consolidadas.
+Campos ausentes permanecem nulos; listas e payloads desnecessarios da API nao
+sao replicados.
