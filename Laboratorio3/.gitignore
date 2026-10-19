@@ -4,5 +4,9 @@
 data/*.csv
 data/*.json
 data/raw/
+data/parquet/
+data/*.sqlite3
+data/*.sqlite3-shm
+data/*.sqlite3-wal
 !.gitkeep
 !data/repositories_s02_partial.csv

@@ -17,6 +17,7 @@ from .collectors import (
     WorkflowRunWindowLimitError,
 )
 from .config import PipelineConfig
+from .git_metadata import GitMetadataCollector
 from .github_client import GitHubAPIError, GitHubClient
 from .metrics import (
     DoraLevel,
@@ -35,6 +36,7 @@ from .metrics import (
     summarize_recovery,
 )
 from .output import checkpoint, save_repository_payload
+from .state import CollectionState, collection_run_key, export_parquet
 
 
 PARTIAL_MAX_RELEASES = 50
@@ -59,10 +61,43 @@ def run_pipeline(
     )
     selection_rows: list[dict[str, Any]] = []
     repository_rows: list[dict[str, Any]] = []
+    state = CollectionState(config.output_dir / "collection_state.sqlite3")
+    run_key = collection_run_key(
+        {
+            "start_date": config.start_date.isoformat(),
+            "end_date": config.end_date.isoformat(),
+            "minimum_stars": config.minimum_stars,
+            "minimum_releases": config.minimum_releases,
+            "minimum_workflow_runs": config.minimum_workflow_runs,
+            "collect_tags": config.collect_tags,
+            "use_git_metadata": config.use_git_metadata,
+            "fast_partial": fast_partial,
+        }
+    )
+    completed = state.load_completed(run_key)
+    git_collector = (
+        GitMetadataCollector(config.git_cache_dir) if config.use_git_metadata else None
+    )
+
+    def maybe_checkpoint(*, force: bool = False) -> None:
+        if force or len(selection_rows) % 10 == 0:
+            checkpoint(config.output_dir, selection_rows, repository_rows)
 
     for position, repository in enumerate(candidates, start=1):
         full_name = repository["full_name"]
         progress(f"[{position}/{len(candidates)}] {full_name}")
+        restored = completed.get(full_name)
+        if restored is not None:
+            restored_selection, restored_repository = restored
+            selection_rows.append(restored_selection)
+            if restored_repository is not None:
+                repository_rows.append(restored_repository)
+            progress("  retomado do checkpoint local")
+            maybe_checkpoint()
+            if target_included is not None and len(repository_rows) >= target_included:
+                progress(f"Meta de {target_included} repositorios validos atingida.")
+                break
+            continue
         selection = _base_selection(repository, config.end_date)
 
         try:
@@ -70,8 +105,9 @@ def run_pipeline(
             selection["workflows_count"] = len(workflows)
             if not workflows:
                 selection["discard_reason"] = "no_github_actions"
+                state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
-                checkpoint(config.output_dir, selection_rows, repository_rows)
+                maybe_checkpoint()
                 continue
 
             selection["contributors_count"] = count_contributors(client, full_name)
@@ -87,14 +123,16 @@ def run_pipeline(
             selection["releases_in_window"] = len(releases_in_window)
             if len(releases_in_window) < config.minimum_releases:
                 selection["discard_reason"] = "insufficient_releases"
+                state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
-                checkpoint(config.output_dir, selection_rows, repository_rows)
+                maybe_checkpoint()
                 continue
             selection["task1_included"] = True
             if fast_partial and len(releases_in_window) > PARTIAL_MAX_RELEASES:
                 selection["discard_reason"] = "partial_release_volume_limit"
+                state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
-                checkpoint(config.output_dir, selection_rows, repository_rows)
+                maybe_checkpoint()
                 continue
 
             default_branch = repository.get("default_branch")
@@ -118,17 +156,23 @@ def run_pipeline(
                 < config.minimum_workflow_runs
             ):
                 selection["discard_reason"] = "insufficient_workflow_runs"
+                state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
-                checkpoint(config.output_dir, selection_rows, repository_rows)
+                maybe_checkpoint()
                 continue
 
-            tags = collect_tags(client, full_name) if config.collect_tags else []
+            tags = (
+                collect_tags(client, full_name, git_collector=git_collector)
+                if config.collect_tags
+                else []
+            )
             comparisons = collect_release_comparisons(
                 client,
                 full_name,
                 releases,
                 start_date=config.start_date,
                 end_date=config.end_date,
+                git_collector=git_collector,
             )
             lead_time_values = lead_time_summary(comparisons)
             deployment_frequency_value = deployment_frequency(
@@ -183,18 +227,20 @@ def run_pipeline(
             row["s01_included"] = True
             repository_rows.append(row)
             selection_rows.append(selection)
+            payload = {
+                "repository": _repository_metadata(repository),
+                "workflows": workflows,
+                "releases": releases,
+                "tags": tags,
+                "comparisons": comparisons,
+                "workflow_runs": workflow_runs,
+            }
             save_repository_payload(
                 config.output_dir,
                 full_name,
-                {
-                    "repository": _repository_metadata(repository),
-                    "workflows": workflows,
-                    "releases": releases,
-                    "tags": tags,
-                    "comparisons": comparisons,
-                    "workflow_runs": workflow_runs,
-                },
+                payload,
             )
+            state.save_completed(run_key, full_name, selection, row, payload)
         except (
             GitHubAPIError,
             WorkflowRunWindowLimitError,
@@ -206,11 +252,21 @@ def run_pipeline(
             selection_rows.append(selection)
             progress(f"  erro: {exc}")
 
-        checkpoint(config.output_dir, selection_rows, repository_rows)
+        maybe_checkpoint()
         if target_included is not None and len(repository_rows) >= target_included:
             progress(f"Meta de {target_included} repositorios validos atingida.")
             break
 
+    maybe_checkpoint(force=True)
+    if config.export_parquet:
+        export_parquet(
+            config.output_dir,
+            state,
+            run_key,
+            selection_rows=selection_rows,
+            repository_rows=repository_rows,
+        )
+    state.close()
     return {
         "candidates": len(candidates),
         "processed": len(selection_rows),

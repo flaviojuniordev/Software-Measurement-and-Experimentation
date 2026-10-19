@@ -230,3 +230,43 @@ def test_runner_stops_when_included_target_is_reached(tmp_path, monkeypatch):
     )
 
     assert summary == {"candidates": 3, "processed": 2, "included": 2}
+
+
+def test_runner_resumes_completed_repository_from_sqlite(tmp_path, monkeypatch):
+    candidate = {
+        "full_name": "org/no-actions",
+        "stargazers_count": 5000,
+        "language": "Python",
+        "created_at": "2020-01-01T00:00:00Z",
+        "default_branch": "main",
+    }
+    calls = 0
+
+    monkeypatch.setattr(
+        "pipeline.runner.discover_repositories", lambda *args, **kwargs: [candidate]
+    )
+
+    def workflows(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        return []
+
+    monkeypatch.setattr("pipeline.runner.collect_workflows", workflows)
+    config = PipelineConfig(
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        candidate_limit=1,
+        cache_dir=tmp_path / "cache",
+        git_cache_dir=tmp_path / "git",
+        output_dir=tmp_path / "data",
+        use_git_metadata=False,
+        export_parquet=False,
+    )
+
+    first = run_pipeline(config, object(), progress=lambda _message: None)
+    messages = []
+    second = run_pipeline(config, object(), progress=messages.append)
+
+    assert first == second == {"candidates": 1, "processed": 1, "included": 0}
+    assert calls == 1
+    assert any("retomado" in message for message in messages)

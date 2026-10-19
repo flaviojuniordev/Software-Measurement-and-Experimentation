@@ -24,7 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--start-date", help="inicio oficial da janela (AAAA-MM-DD)")
     parser.add_argument("--end-date", help="fim oficial da janela (AAAA-MM-DD)")
     parser.add_argument(
-        "--limit", type=int, help="numero de repositorios candidatos (padrao: 300)"
+        "--limit", type=int, help="numero de candidatos (padrao: definido no config)"
     )
     parser.add_argument(
         "--target-included",
@@ -34,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--fast-partial",
         action="store_true",
-        help="pula candidatos com meses no teto de 1.000 workflow runs",
+        help="aplica limites de volume exclusivos do checkpoint parcial",
     )
     return parser
 
@@ -56,7 +56,11 @@ def main(argv: list[str] | None = None) -> int:
         summary = run_pipeline(
             config,
             client,
-            target_included=args.target_included,
+            target_included=(
+                args.target_included
+                if args.target_included is not None
+                else config.target_included
+            ),
             fast_partial=args.fast_partial,
         )
     except (ConfigError, RuntimeError) as exc:

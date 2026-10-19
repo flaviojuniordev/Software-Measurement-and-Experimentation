@@ -8,6 +8,7 @@ from pipeline.collectors import (
     main_releases_in_window,
 )
 from pipeline.github_client import GitHubAPIError, GitHubResponse
+from pipeline.git_metadata import GitCollectionError
 
 
 class FakeClient:
@@ -57,6 +58,30 @@ def test_discover_repositories_removes_pagination_duplicates():
     result = discover_repositories(client, minimum_stars=1000, limit=2)
 
     assert result == [{"full_name": "a/one"}, {"full_name": "b/two"}]
+
+
+def test_discover_repositories_slices_search_after_first_thousand():
+    class SearchClient:
+        def __init__(self):
+            self.calls = []
+
+        def paginate(self, path, params, *, item_key=None, limit=None):
+            self.calls.append(dict(params))
+            if len(self.calls) == 1:
+                return [
+                    {"full_name": f"org/repo-{number}", "stargazers_count": 5000}
+                    for number in range(1_000)
+                ]
+            return [
+                {"full_name": f"next/repo-{number}", "stargazers_count": 4999}
+                for number in range(10)
+            ]
+
+    client = SearchClient()
+    result = discover_repositories(client, minimum_stars=1000, limit=1_010)
+
+    assert len(result) == 1_010
+    assert client.calls[1]["q"] == "stars:1001..5000"
 
 
 def test_count_contributors_uses_last_page():
@@ -115,11 +140,56 @@ def test_collect_releases_keeps_window_and_one_previous_main_release():
         end_date=date(2025, 12, 31),
     )
 
-    assert client.iterated[0][1] == {"per_page": 100}
+    assert client.iterated[0][1] == {"per_page": 30}
     assert [item["tag_name"] for item in releases] == ["v1", "rc", "v2"]
     assert [item["tag_name"] for item in main_releases_in_window(
         releases, date(2025, 1, 1), date(2025, 12, 31)
     )] == ["v2"]
+
+
+def test_collect_releases_prefers_graphql_minimal_fields():
+    class GraphQLClient:
+        def graphql(self, query, variables):
+            return GitHubResponse(
+                url="graphql",
+                status=200,
+                headers={},
+                data={
+                    "repository": {
+                        "releases": {
+                            "nodes": [
+                                {
+                                    "tagName": "v2",
+                                    "publishedAt": "2025-02-01T00:00:00Z",
+                                    "isDraft": False,
+                                    "isPrerelease": False,
+                                    "description": "notes",
+                                    "url": "https://github.com/a/b/releases/v2",
+                                },
+                                {
+                                    "tagName": "v1",
+                                    "publishedAt": "2024-12-01T00:00:00Z",
+                                    "isDraft": False,
+                                    "isPrerelease": False,
+                                    "description": "old",
+                                    "url": "https://github.com/a/b/releases/v1",
+                                },
+                            ],
+                            "pageInfo": {"hasNextPage": False, "endCursor": None},
+                        }
+                    }
+                },
+            )
+
+    releases = collect_releases(
+        GraphQLClient(),
+        "a/b",
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+    )
+
+    assert [release["tag_name"] for release in releases] == ["v1", "v2"]
+    assert releases[1]["body"] == "notes"
 
 
 def test_collect_release_comparisons_normalises_commits():
@@ -163,3 +233,31 @@ def test_collect_release_comparisons_normalises_commits():
             "error": None,
         }
     ]
+
+
+def test_collect_release_comparisons_falls_back_to_rest_when_git_fails():
+    class BrokenGit:
+        def commits_between(self, *_args):
+            raise GitCollectionError("tag removida")
+
+    client = FakeClient()
+    client.paginated = [[{
+        "sha": "abc",
+        "commit": {"author": {"date": "2025-02-01T00:00:00Z"}, "message": "fix"},
+    }]]
+    releases = [
+        make_release("v1", "2024-12-20T00:00:00Z"),
+        make_release("v2", "2025-02-10T00:00:00Z"),
+    ]
+
+    result = collect_release_comparisons(
+        client,
+        "a/b",
+        releases,
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        git_collector=BrokenGit(),
+    )
+
+    assert result[0]["commits"][0]["sha"] == "abc"
+    assert result[0]["error"] is None

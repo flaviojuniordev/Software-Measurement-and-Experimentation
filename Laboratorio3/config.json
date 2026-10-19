@@ -4,15 +4,19 @@
     "end_date": "2026-09-30"
   },
   "collection": {
-    "candidate_limit": 300,
+    "candidate_limit": 4000,
+    "target_included": 300,
     "minimum_stars": 1000,
     "minimum_releases": 5,
     "minimum_workflow_runs": 50,
-    "collect_tags": true
+    "collect_tags": true,
+    "use_git_metadata": true
   },
   "runtime": {
     "cache_dir": ".cache/github",
+    "git_cache_dir": ".cache/git",
     "output_dir": "data",
+    "export_parquet": true,
     "max_retries": 5,
     "request_timeout_seconds": 30
   }

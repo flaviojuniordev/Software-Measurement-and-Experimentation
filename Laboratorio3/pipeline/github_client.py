@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
 import json
 import os
 import ssl
@@ -111,7 +112,58 @@ class GitHubClient:
         params: Mapping[str, Any] | None = None,
     ) -> GitHubResponse:
         url = self._build_url(path_or_url, params)
-        cached = self._read_cache(url)
+        return self._execute(url, cache_key=url, method="GET")
+
+    def graphql(
+        self,
+        query: str,
+        variables: Mapping[str, Any] | None = None,
+    ) -> GitHubResponse:
+        """Executa GraphQL com o mesmo cache, retry e rate limit do REST."""
+
+        body = json.dumps(
+            {"query": query, "variables": dict(variables or {})},
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        digest = hashlib.sha256(body).hexdigest()
+        url = f"{self.api_url}/graphql"
+        response = self._execute(
+            url,
+            cache_key=f"{url}?request_sha256={digest}",
+            method="POST",
+            body=body,
+        )
+        if isinstance(response.data, dict) and response.data.get("errors"):
+            self._cache_path(f"{url}?request_sha256={digest}").unlink(missing_ok=True)
+            raise GitHubAPIError(
+                response.status,
+                response.url,
+                f"GraphQL retornou erros: {response.data['errors']}",
+            )
+        data = response.data.get("data") if isinstance(response.data, dict) else None
+        if not isinstance(data, dict):
+            raise GitHubAPIError(
+                response.status, response.url, "resposta GraphQL sem data"
+            )
+        return GitHubResponse(
+            url=response.url,
+            status=response.status,
+            headers=response.headers,
+            data=data,
+            from_cache=response.from_cache,
+        )
+
+    def _execute(
+        self,
+        url: str,
+        *,
+        cache_key: str,
+        method: str,
+        body: bytes | None = None,
+    ) -> GitHubResponse:
+        cached = self._read_cache(cache_key)
         if cached is not None:
             return cached
 
@@ -119,7 +171,7 @@ class GitHubClient:
         for attempt in range(self.max_retries + 1):
             self._wait_if_needed()
             try:
-                response = self._request(url)
+                response = self._request(url, method=method, body=body)
             except HTTPError as exc:
                 headers = _normalise_headers(exc.headers)
                 body = exc.read().decode("utf-8", errors="replace")
@@ -128,7 +180,13 @@ class GitHubClient:
                     self._wait_before_retry(attempt, headers)
                     continue
                 raise GitHubAPIError(exc.code, url, last_error) from exc
-            except (URLError, TimeoutError, OSError, HTTPException) as exc:
+            except (
+                URLError,
+                TimeoutError,
+                OSError,
+                HTTPException,
+                json.JSONDecodeError,
+            ) as exc:
                 last_error = str(exc)
                 if attempt < self.max_retries:
                     self._sleep(2**attempt)
@@ -136,7 +194,7 @@ class GitHubClient:
                 raise GitHubAPIError(None, url, last_error) from exc
 
             self._observe_rate_limit(response.headers)
-            self._write_cache(response)
+            self._write_cache(cache_key, response)
             return response
 
         raise GitHubAPIError(None, url, last_error)
@@ -177,23 +235,36 @@ class GitHubClient:
                 break
         return items
 
-    def _request(self, url: str) -> GitHubResponse:
+    def _request(
+        self,
+        url: str,
+        *,
+        method: str = "GET",
+        body: bytes | None = None,
+    ) -> GitHubResponse:
         headers = {
             "Accept": "application/vnd.github+json",
+            "Accept-Encoding": "gzip",
             "X-GitHub-Api-Version": "2022-11-28",
             "User-Agent": "lab03-dora-miner",
         }
+        if body is not None:
+            headers["Content-Type"] = "application/json"
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
-        request = Request(url, headers=headers, method="GET")
+        request = Request(url, data=body, headers=headers, method=method)
         raw = self._opener(request, timeout=self.timeout_seconds)
         try:
-            body = raw.read().decode("utf-8")
-            data = json.loads(body) if body else None
+            headers_received = _normalise_headers(getattr(raw, "headers", {}))
+            raw_body = raw.read()
+            if headers_received.get("content-encoding", "").lower() == "gzip":
+                raw_body = gzip.decompress(raw_body)
+            decoded = raw_body.decode("utf-8")
+            data = json.loads(decoded) if decoded else None
             return GitHubResponse(
                 url=url,
                 status=getattr(raw, "status", 200),
-                headers=_normalise_headers(getattr(raw, "headers", {})),
+                headers=headers_received,
                 data=data,
             )
         finally:
@@ -224,16 +295,23 @@ class GitHubClient:
             (split.scheme, split.netloc, split.path, urlencode(query), split.fragment)
         )
 
-    def _cache_path(self, url: str) -> Path:
+    def _cache_path(self, url: str, *, compressed: bool = True) -> Path:
         digest = hashlib.sha256(url.encode("utf-8")).hexdigest()
-        return self.cache_dir / f"{digest}.json"
+        suffix = ".json.gz" if compressed else ".json"
+        return self.cache_dir / f"{digest}{suffix}"
 
     def _read_cache(self, url: str) -> GitHubResponse | None:
-        path = self._cache_path(url)
+        compressed_path = self._cache_path(url)
+        legacy_path = self._cache_path(url, compressed=False)
+        path = compressed_path if compressed_path.exists() else legacy_path
         if not path.exists():
             return None
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
+            if path.suffix == ".gz":
+                with gzip.open(path, "rt", encoding="utf-8") as handle:
+                    raw = json.load(handle)
+            else:
+                raw = json.loads(path.read_text(encoding="utf-8"))
             return GitHubResponse(
                 url=raw["url"],
                 status=int(raw["status"]),
@@ -245,8 +323,8 @@ class GitHubClient:
             path.unlink(missing_ok=True)
             return None
 
-    def _write_cache(self, response: GitHubResponse) -> None:
-        path = self._cache_path(response.url)
+    def _write_cache(self, cache_key: str, response: GitHubResponse) -> None:
+        path = self._cache_path(cache_key)
         temporary = path.with_suffix(".tmp")
         payload = {
             "url": response.url,
@@ -254,9 +332,8 @@ class GitHubClient:
             "headers": response.headers,
             "data": response.data,
         }
-        temporary.write_text(
-            json.dumps(payload, ensure_ascii=True, sort_keys=True), encoding="utf-8"
-        )
+        with gzip.open(temporary, "wt", encoding="utf-8", compresslevel=6) as handle:
+            json.dump(payload, handle, ensure_ascii=True, separators=(",", ":"))
         temporary.replace(path)
 
     def _observe_rate_limit(self, headers: Mapping[str, str]) -> None:

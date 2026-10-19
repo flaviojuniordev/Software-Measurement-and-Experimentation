@@ -1,4 +1,5 @@
 import io
+import gzip
 import json
 from http.client import IncompleteRead
 from urllib.error import HTTPError
@@ -112,7 +113,40 @@ def test_retries_incomplete_read_without_caching_partial_response(tmp_path):
     assert second.from_cache is True
     assert attempts == 2
     assert sleeps == [1]
-    assert len(list(tmp_path.glob("*.json"))) == 1
+    assert len(list(tmp_path.glob("*.json.gz"))) == 1
+
+
+def test_decompresses_gzip_response_and_sends_accept_encoding(tmp_path):
+    requests = []
+
+    class GzipRaw(FakeRaw):
+        def __init__(self):
+            self._body = gzip.compress(b'{"ok":true}')
+            self.headers = {"Content-Encoding": "gzip"}
+            self.status = 200
+
+    def opener(request, timeout):
+        requests.append(request)
+        return GzipRaw()
+
+    client = GitHubClient("token", tmp_path, opener=opener)
+
+    assert client.get("/compressed").data == {"ok": True}
+    assert requests[0].get_header("Accept-encoding") == "gzip"
+
+
+def test_graphql_uses_post_and_unwraps_data(tmp_path):
+    requests = []
+
+    def opener(request, timeout):
+        requests.append(request)
+        return FakeRaw({"data": {"repository": {"name": "project"}}})
+
+    client = GitHubClient("token", tmp_path, opener=opener)
+    response = client.graphql("query($name:String!){repository{name}}", {"name": "project"})
+
+    assert response.data == {"repository": {"name": "project"}}
+    assert requests[0].method == "POST"
 
 
 def test_waits_on_next_request_when_rate_limit_reaches_zero(tmp_path):
