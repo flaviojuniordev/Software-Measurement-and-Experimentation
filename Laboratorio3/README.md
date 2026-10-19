@@ -102,14 +102,16 @@ as formulas do experimento:
 | releases publicadas | GraphQL com campos minimos | REST, `per_page=30` |
 | workflow runs | REST adaptativo, com 4 workers | subdivisao antes do teto de 1.000 |
 | tags | `git ls-remote --tags` | REST paginado |
-| commits entre releases | fetch Git parcial das duas tags e `git log` | endpoint REST `compare` |
+| commits entre releases | tags ausentes em lotes, fetch Git parcial e `git log` | endpoint REST `compare` |
 
-O cache Git e bare e fica em `.cache/git`. Para cada par de releases sao
-baixados somente os objetos necessarios, com `--filter=blob:none`; o conteudo
-dos arquivos nao e usado. A equivalencia foi verificada em uma comparacao real
-do repositorio `psf/requests`: Git e REST retornaram os mesmos 128 SHAs. Essa
-estrategia preserva os dados usados nas metricas e evita armazenar respostas
-REST gigantes de comparacoes.
+O cache Git e bare e fica em `.cache/git`. Antes das comparacoes, o pipeline
+identifica em uma unica consulta local as tags ja presentes e busca somente as
+ausentes em lotes limitados, com `--filter=blob:none`. Tags compartilhadas por
+comparacoes consecutivas nao sao baixadas novamente, inclusive depois de uma
+interrupcao; o conteudo dos arquivos nao e usado. A equivalencia foi verificada
+em uma comparacao real do repositorio `psf/requests`: Git e REST retornaram os
+mesmos 128 SHAs. Essa estrategia preserva os dados usados nas metricas e evita
+armazenar respostas REST gigantes de comparacoes.
 
 O SQLite registra somente o resultado de cada repositorio concluido e permite
 retomar no proximo candidato depois de uma interrupcao. Os payloads volumosos

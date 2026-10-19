@@ -7,7 +7,7 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Iterable, Iterator, Sequence
 
 
 class GitCollectionError(RuntimeError):
@@ -21,6 +21,9 @@ class GitCommandResult:
 
 
 CommandRunner = Callable[[Sequence[str]], GitCommandResult]
+
+_FETCH_BATCH_SIZE = 50
+_FETCH_BATCH_MAX_CHARS = 24_000
 
 
 class GitMetadataCollector:
@@ -40,6 +43,7 @@ class GitMetadataCollector:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._runner = runner or _run_git
+        self._available_refs: dict[Path, set[str]] = {}
 
     def collect_tags(self, full_name: str) -> list[dict[str, Any]]:
         """Lista tags com uma única negociação leve, sem clonar o projeto."""
@@ -81,8 +85,8 @@ class GitMetadataCollector:
         """Retorna SHA, data do autor e mensagem no intervalo ``base..head``."""
 
         repository = self._ensure_repository(full_name)
-        base_ref = self._fetch_tag(repository, full_name, base_tag)
-        head_ref = self._fetch_tag(repository, full_name, head_tag)
+        base_ref = self._fetch_tag(repository, base_tag)
+        head_ref = self._fetch_tag(repository, head_tag)
         result = self._runner(
             [
                 "git",
@@ -115,6 +119,29 @@ class GitMetadataCollector:
             )
         return commits
 
+    def prepare_tags(self, full_name: str, tag_names: Iterable[str]) -> None:
+        """Busca antecipadamente apenas as tags ausentes, em lotes limitados.
+
+        As referencias persistem no repositorio bare. Em uma retomada, uma unica
+        consulta local identifica tudo que ja foi obtido e evita repetir milhares
+        de negociacoes com o remoto.
+        """
+
+        repository = self._ensure_repository(full_name)
+        available = self._available_references(repository)
+        missing: list[tuple[str, str]] = []
+        for tag_name in dict.fromkeys(tag_names):
+            local_ref = self._local_ref(tag_name)
+            if local_ref not in available:
+                missing.append((f"refs/tags/{tag_name}", local_ref))
+
+        for batch in self._fetch_batches(missing):
+            self._fetch_batch_with_isolation(
+                repository,
+                batch,
+                available,
+            )
+
     def _ensure_repository(self, full_name: str) -> Path:
         digest = hashlib.sha256(full_name.encode("utf-8")).hexdigest()[:20]
         repository = self.cache_dir / f"{digest}.git"
@@ -134,10 +161,77 @@ class GitMetadataCollector:
             )
         return repository
 
-    def _fetch_tag(self, repository: Path, full_name: str, tag_name: str) -> str:
-        local_name = hashlib.sha256(tag_name.encode("utf-8")).hexdigest()
-        local_ref = f"refs/lab03/{local_name}"
-        remote_ref = f"refs/tags/{tag_name}"
+    def _fetch_tag(self, repository: Path, tag_name: str) -> str:
+        local_ref = self._local_ref(tag_name)
+        available = self._available_references(repository)
+        if local_ref in available:
+            return local_ref
+
+        self._fetch_refs(
+            repository,
+            [(f"refs/tags/{tag_name}", local_ref)],
+        )
+        available.add(local_ref)
+        return local_ref
+
+    def _available_references(self, repository: Path) -> set[str]:
+        cached = self._available_refs.get(repository)
+        if cached is not None:
+            return cached
+
+        available = self._list_references(repository)
+        self._available_refs[repository] = available
+        return available
+
+    def _fetch_batch_with_isolation(
+        self,
+        repository: Path,
+        references: list[tuple[str, str]],
+        available: set[str],
+    ) -> None:
+        if not references:
+            return
+        try:
+            self._fetch_refs(repository, references)
+        except GitCollectionError:
+            # Um unico nome de tag invalido nao deve impedir o lote inteiro. O
+            # Git pode ter atualizado parte das referencias antes de falhar.
+            available.update(self._list_references(repository))
+            remaining = [item for item in references if item[1] not in available]
+            if len(remaining) <= 1:
+                return
+            middle = len(remaining) // 2
+            self._fetch_batch_with_isolation(
+                repository, remaining[:middle], available
+            )
+            self._fetch_batch_with_isolation(
+                repository, remaining[middle:], available
+            )
+        else:
+            available.update(local_ref for _, local_ref in references)
+
+    def _list_references(self, repository: Path) -> set[str]:
+        result = self._runner(
+            [
+                "git",
+                "--git-dir",
+                str(repository),
+                "for-each-ref",
+                "--format=%(refname)",
+                "refs/lab03/",
+            ]
+        )
+        return {
+            line.strip()
+            for line in result.stdout.splitlines()
+            if line.strip()
+        }
+
+    def _fetch_refs(
+        self,
+        repository: Path,
+        references: Sequence[tuple[str, str]],
+    ) -> None:
         self._runner(
             [
                 "git",
@@ -148,30 +242,39 @@ class GitMetadataCollector:
                 "--force",
                 "--filter=blob:none",
                 "--no-tags",
+                "--no-write-fetch-head",
                 "origin",
-                f"{remote_ref}:{local_ref}",
+                *(
+                    f"{remote_ref}:{local_ref}"
+                    for remote_ref, local_ref in references
+                ),
             ]
         )
-        try:
-            resolved = self._runner(
-                [
-                    "git",
-                    "--git-dir",
-                    str(repository),
-                    "rev-parse",
-                    "--verify",
-                    f"{local_ref}^{{commit}}",
-                ]
-            ).stdout.strip()
-        except GitCollectionError as exc:
-            raise GitCollectionError(
-                f"A tag {tag_name!r} de {full_name} não aponta para um commit."
-            ) from exc
-        if not resolved:
-            raise GitCollectionError(
-                f"A tag {tag_name!r} de {full_name} não pôde ser resolvida."
-            )
-        return resolved
+
+    @staticmethod
+    def _fetch_batches(
+        references: Sequence[tuple[str, str]],
+    ) -> Iterator[list[tuple[str, str]]]:
+        batch: list[tuple[str, str]] = []
+        command_chars = 0
+        for reference in references:
+            reference_chars = len(reference[0]) + len(reference[1]) + 2
+            if batch and (
+                len(batch) >= _FETCH_BATCH_SIZE
+                or command_chars + reference_chars > _FETCH_BATCH_MAX_CHARS
+            ):
+                yield batch
+                batch = []
+                command_chars = 0
+            batch.append(reference)
+            command_chars += reference_chars
+        if batch:
+            yield batch
+
+    @staticmethod
+    def _local_ref(tag_name: str) -> str:
+        local_name = hashlib.sha256(tag_name.encode("utf-8")).hexdigest()
+        return f"refs/lab03/{local_name}"
 
     @staticmethod
     def _remote_url(full_name: str) -> str:

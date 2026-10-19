@@ -55,9 +55,10 @@ transferido e torna interrupcoes recuperaveis:
    recursivamente quando o `total_count` alcanca o teto de 1.000; intervalos e
    paginas independentes usam concorrencia limitada e o mesmo rate limiter;
 4. tags usam `git ls-remote`, sem checkout, e possuem fallback REST;
-5. commits entre duas releases sao obtidos de um repositorio bare parcial,
-   baixando as tags envolvidas sem blobs e executando `git log`; o endpoint
-   REST `compare` permanece como fallback;
+5. commits entre duas releases sao obtidos de um repositorio bare parcial; as
+   tags ja presentes sao reutilizadas e somente as ausentes sao buscadas em
+   lotes, sem blobs, antes dos comandos `git log`; o endpoint REST `compare`
+   permanece como fallback;
 6. respostas completas sao comprimidas, e um checkpoint SQLite registra apenas
    o resultado de cada repositorio concluido, sem duplicar os workflow runs.
    Tabelas Parquet normalizadas sao exportadas em lotes a partir dos JSONs como

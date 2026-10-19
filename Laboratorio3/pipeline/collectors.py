@@ -613,6 +613,18 @@ def collect_release_comparisons(
     )
     comparisons: list[dict[str, Any]] = []
 
+    if git_collector is not None:
+        prepare_tags = getattr(git_collector, "prepare_tags", None)
+        if callable(prepare_tags):
+            try:
+                prepare_tags(
+                    full_name,
+                    [release["tag_name"] for release in main_releases],
+                )
+            except GitCollectionError:
+                # Mantem o fallback individual REST/Git de cada comparacao.
+                pass
+
     for previous, current in zip(main_releases, main_releases[1:]):
         published_date = parse_github_datetime(current["published_at"]).date()
         if not start_date <= published_date <= end_date:

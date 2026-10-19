@@ -261,3 +261,33 @@ def test_collect_release_comparisons_falls_back_to_rest_when_git_fails():
 
     assert result[0]["commits"][0]["sha"] == "abc"
     assert result[0]["error"] is None
+
+
+def test_collect_release_comparisons_prepares_all_main_tags_once():
+    class PreparedGit:
+        prepared = None
+
+        def prepare_tags(self, full_name, tag_names):
+            self.prepared = (full_name, tag_names)
+
+        def commits_between(self, *_args):
+            return []
+
+    git_collector = PreparedGit()
+    releases = [
+        make_release("v1", "2024-12-20T00:00:00Z"),
+        make_release("v2", "2025-02-10T00:00:00Z"),
+        make_release("v3", "2025-03-10T00:00:00Z"),
+    ]
+
+    result = collect_release_comparisons(
+        FakeClient(),
+        "a/b",
+        releases,
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        git_collector=git_collector,
+    )
+
+    assert git_collector.prepared == ("a/b", ["v1", "v2", "v3"])
+    assert len(result) == 2
