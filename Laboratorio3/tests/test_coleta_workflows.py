@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from datetime import date
 from typing import Any, Mapping
 
@@ -179,3 +180,36 @@ def test_coletor_parcial_rejeita_volume_total_acima_do_limite() -> None:
             end_date=date(2025, 2, 28),
             max_runs=4,
         )
+
+
+def test_coletor_busca_paginas_independentes_em_paralelo() -> None:
+    barrier = threading.Barrier(2)
+
+    class ConcurrentClient:
+        def get(self, path, params=None):
+            if params is not None:
+                return GitHubResponse(
+                    url="https://api.github.com/runs?page=1",
+                    status=200,
+                    headers={
+                        "link": (
+                            '<https://api.github.com/runs?page=2>; rel="next", '
+                            '<https://api.github.com/runs?page=3>; rel="last"'
+                        )
+                    },
+                    data={"total_count": 3, "workflow_runs": [run(1)]},
+                )
+            page_number = int(path.rsplit("=", 1)[-1])
+            barrier.wait(timeout=1)
+            return page([run(page_number)])
+
+    result = collect_workflow_runs(
+        ConcurrentClient(),
+        "acme/project",
+        default_branch="main",
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 1, 2),
+        workers=2,
+    )
+
+    assert [item["id"] for item in result] == [1, 2, 3]

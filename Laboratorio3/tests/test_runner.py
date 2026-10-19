@@ -3,7 +3,7 @@ import json
 from datetime import date
 
 from pipeline.config import PipelineConfig
-from pipeline.runner import run_pipeline
+from pipeline.runner import _order_candidates, run_pipeline
 
 
 def make_release(tag, published_at):
@@ -13,6 +13,21 @@ def make_release(tag, published_at):
         "draft": False,
         "prerelease": False,
     }
+
+
+def test_candidate_order_is_reproducible_and_prioritizes_completed():
+    candidates = [
+        {"full_name": "org/a"},
+        {"full_name": "org/b"},
+        {"full_name": "org/c"},
+    ]
+
+    first = _order_candidates(candidates, seed=42, completed={"org/c"})
+    second = _order_candidates(candidates, seed=42, completed={"org/c"})
+
+    assert first == second
+    assert first[0]["full_name"] == "org/c"
+    assert {item["full_name"] for item in first} == {"org/a", "org/b", "org/c"}
 
 
 def test_runner_integrates_funnel_metrics_and_checkpoints(tmp_path, monkeypatch):
@@ -92,7 +107,8 @@ def test_runner_integrates_funnel_metrics_and_checkpoints(tmp_path, monkeypatch)
     summary = run_pipeline(config, object(), progress=messages.append)
 
     assert summary == {"candidates": 2, "processed": 2, "included": 1}
-    assert len(messages) == 2
+    assert any("incluido" in message for message in messages)
+    assert any("sem Actions" in message for message in messages)
 
     with (config.output_dir / "repositories_s01.csv").open(
         encoding="utf-8", newline=""

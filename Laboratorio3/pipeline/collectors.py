@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from calendar import monthrange
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
-from urllib.parse import parse_qs, quote, urlsplit
+from typing import Any, Callable, Iterator
+from urllib.parse import parse_qs, parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 from .git_metadata import GitCollectionError, GitMetadataCollector
 from .github_client import GitHubAPIError, GitHubClient, GitHubResponse, parse_link_header
@@ -125,11 +126,13 @@ def collect_workflow_runs(
     end_date: date,
     subdivide_large_windows: bool = True,
     max_runs: int | None = None,
+    workers: int = 4,
+    progress: Callable[[str], None] | None = None,
 ) -> list[dict[str, Any]]:
-    """Coleta runs de push do default branch, por mes e sem duplicatas.
+    """Coleta runs de push com subdivisao e paginacao concorrentes.
 
-    ``GitHubClient.paginate`` fornece cache, retomada, paginacao, rate limit e
-    backoff. O filtro local protege os calculos se a API devolver dados fora dos
+    A concorrencia e limitada e usa o mesmo cliente, cache, rate limit e retry.
+    O filtro local protege os calculos se a API devolver dados fora dos
     parametros solicitados.
     """
 
@@ -137,107 +140,216 @@ def collect_workflow_runs(
         raise ValueError("default_branch e obrigatorio")
     if max_runs is not None and max_runs < 1:
         raise ValueError("max_runs deve ser positivo")
+    if workers < 1:
+        raise ValueError("workers deve ser positivo")
     owner, repository = _split_full_name(full_name)
     path = f"/repos/{quote(owner)}/{quote(repository)}/actions/runs"
     unique_runs: dict[object, dict[str, Any]] = {}
 
-    for interval in [DateInterval(start_date, end_date)]:
-        month_runs = _collect_workflow_runs_interval(
-            client,
-            path,
-            default_branch=default_branch,
-            interval=interval,
-            subdivide_large_windows=subdivide_large_windows,
-            max_runs=max_runs,
-        )
+    interval_pages = _partition_workflow_run_intervals(
+        client,
+        path,
+        default_branch=default_branch,
+        initial=DateInterval(start_date, end_date),
+        subdivide_large_windows=subdivide_large_windows,
+        max_runs=max_runs,
+        workers=workers,
+        progress=progress,
+    )
+    raw_runs = _iter_workflow_run_pages(
+        client,
+        interval_pages,
+        workers=workers,
+        progress=progress,
+    )
 
-        for item in month_runs:
-            run = _normalise_workflow_run(item)
-            if run.get("event") != "push":
-                continue
-            if run.get("head_branch") != default_branch:
-                continue
-            run_id = run.get("id")
-            if run_id is None:
-                raise ValueError("workflow run sem id nao pode ser deduplicado")
-            unique_runs.setdefault(run_id, run)
-        if max_runs is not None and len(unique_runs) > max_runs:
-            raise WorkflowRunWindowLimitError(
-                f"O repositorio ultrapassou {max_runs} workflow runs no modo "
-                "de amostra parcial."
-            )
-
-    return list(unique_runs.values())
-
-
-def _collect_workflow_runs_interval(
-    client: GitHubClient,
-    path: str,
-    *,
-    default_branch: str,
-    interval: DateInterval,
-    subdivide_large_windows: bool,
-    max_runs: int | None = None,
-) -> list[dict[str, Any]]:
-    params = {
-        "branch": default_branch,
-        "event": "push",
-        "created": interval.github_created_filter,
-        "exclude_pull_requests": True,
-        "per_page": 100,
-    }
-    first = client.get(path, params)
-    runs, total_count = _workflow_run_page(first)
-    if max_runs is not None and total_count is not None and total_count > max_runs:
+    for item in raw_runs:
+        run = _normalise_workflow_run(item)
+        if run.get("event") != "push":
+            continue
+        if run.get("head_branch") != default_branch:
+            continue
+        run_id = run.get("id")
+        if run_id is None:
+            raise ValueError("workflow run sem id nao pode ser deduplicado")
+        unique_runs.setdefault(run_id, run)
+    if max_runs is not None and len(unique_runs) > max_runs:
         raise WorkflowRunWindowLimitError(
             f"O repositorio ultrapassou {max_runs} workflow runs no modo "
             "de amostra parcial."
         )
-    reached_limit = (
-        total_count is not None and total_count >= GITHUB_FILTERED_QUERY_LIMIT
-    )
-    if reached_limit and not subdivide_large_windows:
-        raise WorkflowRunWindowLimitError(
-            f"O intervalo {interval.github_created_filter} atingiu o teto de "
-            f"{GITHUB_FILTERED_QUERY_LIMIT} runs no modo de amostra parcial."
-        )
-    if reached_limit and interval.start == interval.end:
-        raise WorkflowRunWindowLimitError(
-            f"O dia {interval.github_created_filter} atingiu o teto de "
-            f"{GITHUB_FILTERED_QUERY_LIMIT} runs e nao pode ser subdividido."
-        )
-    if reached_limit:
-        midpoint = interval.start + (interval.end - interval.start) // 2
-        first_half = DateInterval(interval.start, midpoint)
-        second_half = DateInterval(midpoint + timedelta(days=1), interval.end)
-        return _collect_workflow_runs_interval(
-            client,
-            path,
-            default_branch=default_branch,
-            interval=first_half,
-            subdivide_large_windows=subdivide_large_windows,
-            max_runs=max_runs,
-        ) + _collect_workflow_runs_interval(
-            client,
-            path,
-            default_branch=default_branch,
-            interval=second_half,
-            subdivide_large_windows=subdivide_large_windows,
-            max_runs=max_runs,
-        )
 
-    next_url = parse_link_header(first.headers.get("link")).get("next")
-    while next_url:
-        response = client.get(next_url)
-        page, _ = _workflow_run_page(response)
-        runs.extend(page)
-        if max_runs is not None and len(runs) > max_runs:
-            raise WorkflowRunWindowLimitError(
-                f"O repositorio ultrapassou {max_runs} workflow runs no modo "
-                "de amostra parcial."
+    return list(unique_runs.values())
+
+
+def _partition_workflow_run_intervals(
+    client: GitHubClient,
+    path: str,
+    *,
+    default_branch: str,
+    initial: DateInterval,
+    subdivide_large_windows: bool,
+    max_runs: int | None,
+    workers: int,
+    progress: Callable[[str], None] | None,
+) -> list[tuple[DateInterval, GitHubResponse]]:
+    pending = [initial]
+    safe: list[tuple[DateInterval, GitHubResponse]] = []
+    consulted = 0
+    chunk_size = max(workers * 4, 1)
+
+    while pending:
+        batch, pending = pending[:chunk_size], pending[chunk_size:]
+        requests = [
+            (
+                path,
+                {
+                    "branch": default_branch,
+                    "event": "push",
+                    "created": interval.github_created_filter,
+                    "exclude_pull_requests": True,
+                    "per_page": 100,
+                },
             )
-        next_url = parse_link_header(response.headers.get("link")).get("next")
-    return runs
+            for interval in batch
+        ]
+        responses = _parallel_get(client, requests, workers)
+        consulted += len(responses)
+
+        for interval, response in zip(batch, responses):
+            _, total_count = _workflow_run_page(response)
+            if (
+                max_runs is not None
+                and total_count is not None
+                and total_count > max_runs
+            ):
+                raise WorkflowRunWindowLimitError(
+                    f"O repositorio ultrapassou {max_runs} workflow runs no modo "
+                    "de amostra parcial."
+                )
+            reached_limit = (
+                total_count is not None
+                and total_count >= GITHUB_FILTERED_QUERY_LIMIT
+            )
+            if reached_limit and not subdivide_large_windows:
+                raise WorkflowRunWindowLimitError(
+                    f"O intervalo {interval.github_created_filter} atingiu o "
+                    f"teto de {GITHUB_FILTERED_QUERY_LIMIT} runs no modo de "
+                    "amostra parcial."
+                )
+            if reached_limit and interval.start == interval.end:
+                raise WorkflowRunWindowLimitError(
+                    f"O dia {interval.github_created_filter} atingiu o teto de "
+                    f"{GITHUB_FILTERED_QUERY_LIMIT} runs e nao pode ser subdividido."
+                )
+            if reached_limit:
+                midpoint = interval.start + (interval.end - interval.start) // 2
+                pending.extend(
+                    [
+                        DateInterval(interval.start, midpoint),
+                        DateInterval(midpoint + timedelta(days=1), interval.end),
+                    ]
+                )
+            else:
+                safe.append((interval, response))
+
+        if progress is not None:
+            progress(
+                f"{consulted} intervalos consultados; "
+                f"{len(safe)} abaixo do teto; {len(pending)} pendentes"
+            )
+
+    return sorted(safe, key=lambda item: item[0].start)
+
+
+def _iter_workflow_run_pages(
+    client: GitHubClient,
+    interval_pages: list[tuple[DateInterval, GitHubResponse]],
+    *,
+    workers: int,
+    progress: Callable[[str], None] | None,
+) -> Iterator[dict[str, Any]]:
+    page_urls: list[str] = []
+    linked_pages: list[str] = []
+
+    for _, first in interval_pages:
+        page, _ = _workflow_run_page(first)
+        yield from page
+        urls = _remaining_page_urls(first)
+        if urls is None:
+            next_url = parse_link_header(first.headers.get("link")).get("next")
+            if next_url:
+                linked_pages.append(next_url)
+        else:
+            page_urls.extend(urls)
+
+    chunk_size = max(workers * 4, 1)
+    for offset in range(0, len(page_urls), chunk_size):
+        batch = page_urls[offset : offset + chunk_size]
+        responses = _parallel_get(
+            client, [(url, None) for url in batch], workers
+        )
+        for response in responses:
+            page, _ = _workflow_run_page(response)
+            yield from page
+        if progress is not None:
+            done = min(offset + len(batch), len(page_urls))
+            progress(f"{done}/{len(page_urls)} paginas adicionais coletadas")
+
+    for next_url in linked_pages:
+        while next_url:
+            response = client.get(next_url)
+            page, _ = _workflow_run_page(response)
+            yield from page
+            next_url = parse_link_header(response.headers.get("link")).get("next")
+
+
+def _parallel_get(
+    client: GitHubClient,
+    requests: list[tuple[str, dict[str, Any] | None]],
+    workers: int,
+) -> list[GitHubResponse]:
+    if workers == 1 or len(requests) <= 1:
+        return [client.get(path, params) for path, params in requests]
+    with ThreadPoolExecutor(max_workers=min(workers, len(requests))) as executor:
+        futures = [
+            executor.submit(client.get, path, params) for path, params in requests
+        ]
+        return [future.result() for future in futures]
+
+
+def _remaining_page_urls(response: GitHubResponse) -> list[str] | None:
+    links = parse_link_header(response.headers.get("link"))
+    next_url = links.get("next")
+    if not next_url:
+        return []
+    last_url = links.get("last")
+    if not last_url:
+        return None
+    split = urlsplit(last_url)
+    query = parse_qsl(split.query, keep_blank_values=True)
+    pages = [value for key, value in query if key == "page"]
+    if not pages or not pages[-1].isdigit():
+        return None
+    last_page = int(pages[-1])
+    urls: list[str] = []
+    for page_number in range(2, last_page + 1):
+        page_query = [
+            (key, str(page_number) if key == "page" else value)
+            for key, value in query
+        ]
+        urls.append(
+            urlunsplit(
+                (
+                    split.scheme,
+                    split.netloc,
+                    split.path,
+                    urlencode(page_query),
+                    split.fragment,
+                )
+            )
+        )
+    return urls
 
 
 def _workflow_run_page(

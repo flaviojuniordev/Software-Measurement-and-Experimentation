@@ -87,6 +87,42 @@ def test_retries_server_error_with_exponential_backoff(tmp_path):
     assert sleeps == [1]
 
 
+def test_retries_secondary_rate_limit_and_honours_retry_after(tmp_path):
+    attempts = 0
+    sleeps = []
+    now = [100.0]
+
+    def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+
+    def opener(request, timeout):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise HTTPError(
+                request.full_url,
+                403,
+                "forbidden",
+                {"Retry-After": "3", "X-RateLimit-Remaining": "42"},
+                io.BytesIO(b'{"message":"secondary rate limit"}'),
+            )
+        return FakeRaw({"ok": True})
+
+    client = GitHubClient(
+        "token",
+        tmp_path,
+        opener=opener,
+        sleeper=sleep,
+        clock=lambda: now[0],
+        max_retries=2,
+    )
+
+    assert client.get("/limited").data == {"ok": True}
+    assert attempts == 2
+    assert sleeps == [3]
+
+
 def test_retries_incomplete_read_without_caching_partial_response(tmp_path):
     attempts = 0
     sleeps = []

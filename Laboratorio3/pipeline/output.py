@@ -87,7 +87,7 @@ def save_repository_payload(
     output_dir: Path, full_name: str, payload: dict[str, Any]
 ) -> None:
     safe_name = full_name.replace("/", "__")
-    write_json(output_dir / "raw" / f"{safe_name}.json", payload)
+    write_json(output_dir / "raw" / f"{safe_name}.json", payload, compact=True)
 
 
 def build_funnel(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
@@ -118,11 +118,17 @@ def build_funnel(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     return {"stages": stages, "discard_reasons": dict(sorted(reasons.items()))}
 
 
-def write_json(path: Path, value: Any) -> None:
+def write_json(path: Path, value: Any, *, compact: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(
-        json.dumps(value, ensure_ascii=True, indent=2, sort_keys=True),
+        json.dumps(
+            value,
+            ensure_ascii=True,
+            indent=None if compact else 2,
+            separators=(",", ":") if compact else None,
+            sort_keys=True,
+        ),
         encoding="utf-8",
     )
     temporary.replace(path)

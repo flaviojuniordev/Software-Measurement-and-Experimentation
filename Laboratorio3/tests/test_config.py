@@ -68,3 +68,15 @@ def test_rejects_missing_dates(tmp_path):
 def test_rejects_invalid_candidate_limit(tmp_path, limit):
     with pytest.raises(ConfigError, match="candidate_limit"):
         PipelineConfig.from_file(write_config(tmp_path), candidate_limit=limit)
+
+
+@pytest.mark.parametrize("workers", [0, 17])
+def test_rejects_invalid_workflow_run_workers(tmp_path, workers):
+    config = PipelineConfig(
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        workflow_run_workers=workers,
+    )
+
+    with pytest.raises(ConfigError, match="workflow_run_workers"):
+        config.validate()

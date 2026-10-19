@@ -10,13 +10,15 @@
     "minimum_releases": 5,
     "minimum_workflow_runs": 50,
     "collect_tags": true,
-    "use_git_metadata": true
+    "use_git_metadata": true,
+    "candidate_order_seed": 42
   },
   "runtime": {
     "cache_dir": ".cache/github",
     "git_cache_dir": ".cache/git",
     "output_dir": "data",
     "export_parquet": true,
+    "workflow_run_workers": 4,
     "max_retries": 5,
     "request_timeout_seconds": 30
   }

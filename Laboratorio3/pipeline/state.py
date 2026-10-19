@@ -6,14 +6,14 @@ import hashlib
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Mapping
+from typing import Any, Mapping
 
 
 STATE_SCHEMA_VERSION = 1
 
 
 class CollectionState:
-    """Checkpoint por repositório e staging normalizado em SQLite."""
+    """Checkpoint leve por repositório; payloads permanecem em ``data/raw``."""
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
@@ -30,16 +30,9 @@ class CollectionState:
                 repository_json TEXT,
                 PRIMARY KEY (run_key, full_name)
             );
-            CREATE TABLE IF NOT EXISTS normalized_records (
-                run_key TEXT NOT NULL,
-                table_name TEXT NOT NULL,
-                full_name TEXT NOT NULL,
-                ordinal INTEGER NOT NULL,
-                record_json TEXT NOT NULL,
-                PRIMARY KEY (run_key, table_name, full_name, ordinal)
-            );
             """
         )
+        self._remove_legacy_normalized_records()
 
     def close(self) -> None:
         self._connection.close()
@@ -49,6 +42,19 @@ class CollectionState:
 
     def __exit__(self, *_args: object) -> None:
         self.close()
+
+    def _remove_legacy_normalized_records(self) -> None:
+        legacy = self._connection.execute(
+            """
+            SELECT 1 FROM sqlite_master
+            WHERE type = 'table' AND name = 'normalized_records'
+            """
+        ).fetchone()
+        if legacy is None:
+            return
+        self._connection.execute("DROP TABLE normalized_records")
+        self._connection.commit()
+        self._connection.execute("VACUUM")
 
     def load_completed(
         self, run_key: str
@@ -75,7 +81,6 @@ class CollectionState:
         full_name: str,
         selection: Mapping[str, Any],
         repository_row: Mapping[str, Any] | None,
-        payload: Mapping[str, Any] | None = None,
     ) -> None:
         with self._connection:
             self._connection.execute(
@@ -91,78 +96,6 @@ class CollectionState:
                     _json(repository_row) if repository_row is not None else None,
                 ),
             )
-            self._connection.execute(
-                "DELETE FROM normalized_records WHERE run_key = ? AND full_name = ?",
-                (run_key, full_name),
-            )
-            if payload is not None:
-                self._save_payload_records(run_key, full_name, payload)
-
-    def records(self, run_key: str, table_name: str) -> Iterable[dict[str, Any]]:
-        rows = self._connection.execute(
-            """
-            SELECT record_json
-            FROM normalized_records
-            WHERE run_key = ? AND table_name = ?
-            ORDER BY full_name, ordinal
-            """,
-            (run_key, table_name),
-        )
-        for (record_json,) in rows:
-            yield json.loads(record_json)
-
-    def _save_payload_records(
-        self,
-        run_key: str,
-        full_name: str,
-        payload: Mapping[str, Any],
-    ) -> None:
-        tables: dict[str, list[dict[str, Any]]] = {
-            "repository_metadata": [dict(payload.get("repository") or {})],
-            "workflows": [dict(item) for item in payload.get("workflows") or []],
-            "releases": [dict(item) for item in payload.get("releases") or []],
-            "tags": [dict(item) for item in payload.get("tags") or []],
-            "workflow_runs": [
-                dict(item) for item in payload.get("workflow_runs") or []
-            ],
-            "release_comparisons": [],
-            "release_commits": [],
-        }
-        for comparison in payload.get("comparisons") or []:
-            comparison_row = {
-                key: comparison.get(key)
-                for key in (
-                    "base_tag",
-                    "head_tag",
-                    "release_published_at",
-                    "error",
-                    "error_status",
-                )
-            }
-            tables["release_comparisons"].append(comparison_row)
-            for commit in comparison.get("commits") or []:
-                tables["release_commits"].append(
-                    {
-                        "base_tag": comparison.get("base_tag"),
-                        "head_tag": comparison.get("head_tag"),
-                        "release_published_at": comparison.get(
-                            "release_published_at"
-                        ),
-                        **dict(commit),
-                    }
-                )
-
-        for table_name, records in tables.items():
-            for ordinal, record in enumerate(records):
-                record.setdefault("full_name", full_name)
-                self._connection.execute(
-                    """
-                    INSERT INTO normalized_records
-                        (run_key, table_name, full_name, ordinal, record_json)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (run_key, table_name, full_name, ordinal, _json(record)),
-                )
 
 
 def collection_run_key(values: Mapping[str, Any]) -> str:
@@ -179,7 +112,9 @@ def export_parquet(
     selection_rows: list[dict[str, Any]],
     repository_rows: list[dict[str, Any]],
 ) -> list[Path]:
-    """Exporta tabelas normalizadas; o CSV acadêmico permanece inalterado."""
+    """Exporta Parquet em lotes a partir dos JSONs brutos, sem duplicar no SQLite."""
+
+    del state, run_key
 
     try:
         import pyarrow as pa
@@ -191,22 +126,12 @@ def export_parquet(
 
     target = Path(output_dir) / "parquet"
     target.mkdir(parents=True, exist_ok=True)
-    tables: dict[str, list[dict[str, Any]]] = {
+    summary_tables: dict[str, list[dict[str, Any]]] = {
         "selection_funnel": selection_rows,
         "repositories": repository_rows,
     }
-    for name in (
-        "repository_metadata",
-        "workflows",
-        "releases",
-        "tags",
-        "release_comparisons",
-        "release_commits",
-    ):
-        tables[name] = list(state.records(run_key, name))
-
     written: list[Path] = []
-    for name, records in tables.items():
+    for name, records in summary_tables.items():
         path = target / f"{name}.parquet"
         if not records:
             path.unlink(missing_ok=True)
@@ -217,9 +142,51 @@ def export_parquet(
         temporary.replace(path)
         written.append(path)
 
-    workflow_path = target / "workflow_runs.parquet"
-    workflow_schema = pa.schema(
-        [
+    schemas = {
+        "repository_metadata": pa.schema(
+            [
+                ("id", pa.int64()),
+                ("full_name", pa.string()),
+                ("html_url", pa.string()),
+                ("stargazers_count", pa.int64()),
+                ("language", pa.string()),
+                ("created_at", pa.string()),
+                ("updated_at", pa.string()),
+                ("default_branch", pa.string()),
+                ("archived", pa.bool_()),
+                ("fork", pa.bool_()),
+            ]
+        ),
+        "workflows": pa.schema(
+            [
+                ("id", pa.int64()),
+                ("name", pa.string()),
+                ("path", pa.string()),
+                ("state", pa.string()),
+                ("html_url", pa.string()),
+                ("full_name", pa.string()),
+            ]
+        ),
+        "releases": pa.schema(
+            [
+                ("tag_name", pa.string()),
+                ("published_at", pa.string()),
+                ("draft", pa.bool_()),
+                ("prerelease", pa.bool_()),
+                ("body", pa.string()),
+                ("html_url", pa.string()),
+                ("full_name", pa.string()),
+            ]
+        ),
+        "tags": pa.schema(
+            [
+                ("name", pa.string()),
+                ("commit_sha", pa.string()),
+                ("full_name", pa.string()),
+            ]
+        ),
+        "workflow_runs": pa.schema(
+            [
             ("id", pa.int64()),
             ("workflow_id", pa.int64()),
             ("event", pa.string()),
@@ -231,37 +198,130 @@ def export_parquet(
             ("updated_at", pa.string()),
             ("html_url", pa.string()),
             ("full_name", pa.string()),
-        ]
-    )
-    workflow_records = state.records(run_key, "workflow_runs")
-    workflow_temporary = workflow_path.with_suffix(".parquet.tmp")
-    writer = None
-    try:
-        while batch := list(_take(workflow_records, 10_000)):
-            table = pa.Table.from_pylist(batch, schema=workflow_schema)
-            if writer is None:
-                writer = pq.ParquetWriter(
-                    workflow_temporary, workflow_schema, compression="zstd"
-                )
-            writer.write_table(table)
-    finally:
-        if writer is not None:
-            writer.close()
-    if writer is not None:
-        workflow_temporary.replace(workflow_path)
-        written.append(workflow_path)
-    else:
-        workflow_path.unlink(missing_ok=True)
-        workflow_temporary.unlink(missing_ok=True)
-    return written
+            ]
+        ),
+        "release_comparisons": pa.schema(
+            [
+                ("base_tag", pa.string()),
+                ("head_tag", pa.string()),
+                ("release_published_at", pa.string()),
+                ("error", pa.string()),
+                ("error_status", pa.int64()),
+                ("full_name", pa.string()),
+            ]
+        ),
+        "release_commits": pa.schema(
+            [
+                ("base_tag", pa.string()),
+                ("head_tag", pa.string()),
+                ("release_published_at", pa.string()),
+                ("sha", pa.string()),
+                ("author_date", pa.string()),
+                ("message", pa.string()),
+                ("full_name", pa.string()),
+            ]
+        ),
+    }
+    buffers: dict[str, list[dict[str, Any]]] = {name: [] for name in schemas}
+    writers: dict[str, Any] = {}
+    temporaries = {
+        name: (target / f"{name}.parquet").with_suffix(".parquet.tmp")
+        for name in schemas
+    }
 
-
-def _take(records: Iterator[dict[str, Any]], count: int) -> Iterable[dict[str, Any]]:
-    for _ in range(count):
-        try:
-            yield next(records)
-        except StopIteration:
+    def flush(name: str) -> None:
+        records = buffers[name]
+        if not records:
             return
+        table = pa.Table.from_pylist(records, schema=schemas[name])
+        writer = writers.get(name)
+        if writer is None:
+            writer = pq.ParquetWriter(
+                temporaries[name], schemas[name], compression="zstd"
+            )
+            writers[name] = writer
+        writer.write_table(table)
+        records.clear()
+
+    def append(name: str, record: dict[str, Any]) -> None:
+        buffers[name].append(record)
+        if len(buffers[name]) >= 10_000:
+            flush(name)
+
+    raw_dir = Path(output_dir) / "raw"
+    try:
+        for repository_row in repository_rows:
+            full_name = str(repository_row["full_name"])
+            raw_path = raw_dir / f"{full_name.replace('/', '__')}.json"
+            try:
+                payload = json.loads(raw_path.read_text(encoding="utf-8"))
+            except FileNotFoundError as exc:
+                raise RuntimeError(
+                    f"Payload bruto ausente para exportar Parquet: {full_name}"
+                ) from exc
+            repository = dict(payload.get("repository") or {})
+            repository["full_name"] = full_name
+            append("repository_metadata", repository)
+            for workflow in payload.get("workflows") or []:
+                append("workflows", {**dict(workflow), "full_name": full_name})
+            for release in payload.get("releases") or []:
+                append("releases", {**dict(release), "full_name": full_name})
+            for tag in payload.get("tags") or []:
+                commit = tag.get("commit") or {}
+                append(
+                    "tags",
+                    {
+                        "name": tag.get("name"),
+                        "commit_sha": commit.get("sha"),
+                        "full_name": full_name,
+                    },
+                )
+            for run in payload.get("workflow_runs") or []:
+                append("workflow_runs", {**dict(run), "full_name": full_name})
+            for comparison in payload.get("comparisons") or []:
+                comparison_row = {
+                    key: comparison.get(key)
+                    for key in (
+                        "base_tag",
+                        "head_tag",
+                        "release_published_at",
+                        "error",
+                        "error_status",
+                    )
+                }
+                append(
+                    "release_comparisons",
+                    {**comparison_row, "full_name": full_name},
+                )
+                for commit in comparison.get("commits") or []:
+                    append(
+                        "release_commits",
+                        {
+                            "base_tag": comparison.get("base_tag"),
+                            "head_tag": comparison.get("head_tag"),
+                            "release_published_at": comparison.get(
+                                "release_published_at"
+                            ),
+                            **dict(commit),
+                            "full_name": full_name,
+                        },
+                    )
+        for name in schemas:
+            flush(name)
+    finally:
+        for writer in writers.values():
+            writer.close()
+
+    for name in schemas:
+        path = target / f"{name}.parquet"
+        temporary = temporaries[name]
+        if name in writers:
+            temporary.replace(path)
+            written.append(path)
+        else:
+            path.unlink(missing_ok=True)
+            temporary.unlink(missing_ok=True)
+    return written
 
 
 def _json(value: Any) -> str:

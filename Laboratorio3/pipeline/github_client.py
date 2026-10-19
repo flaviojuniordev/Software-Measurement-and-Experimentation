@@ -7,6 +7,7 @@ import gzip
 import json
 import os
 import ssl
+import threading
 import time
 from dataclasses import dataclass
 from http.client import HTTPException
@@ -84,6 +85,7 @@ class GitHubClient:
         self._sleep = sleeper
         self._clock = clock
         self._blocked_until = 0.0
+        self._rate_lock = threading.Lock()
 
     @classmethod
     def from_environment(
@@ -174,9 +176,15 @@ class GitHubClient:
                 response = self._request(url, method=method, body=body)
             except HTTPError as exc:
                 headers = _normalise_headers(exc.headers)
-                body = exc.read().decode("utf-8", errors="replace")
-                last_error = _api_message(body) or str(exc)
-                if self._is_retryable(exc.code, headers) and attempt < self.max_retries:
+                try:
+                    error_body = exc.read().decode("utf-8", errors="replace")
+                except HTTPException:
+                    error_body = ""
+                last_error = _api_message(error_body) or str(exc)
+                if (
+                    self._is_retryable(exc.code, headers, last_error)
+                    and attempt < self.max_retries
+                ):
                     self._wait_before_retry(attempt, headers)
                     continue
                 raise GitHubAPIError(exc.code, url, last_error) from exc
@@ -339,15 +347,17 @@ class GitHubClient:
     def _observe_rate_limit(self, headers: Mapping[str, str]) -> None:
         if headers.get("x-ratelimit-remaining") != "0":
             return
-        try:
-            self._blocked_until = max(
-                self._blocked_until, float(headers["x-ratelimit-reset"]) + 1
-            )
-        except (KeyError, ValueError):
-            self._blocked_until = max(self._blocked_until, self._clock() + 60)
+        with self._rate_lock:
+            try:
+                self._blocked_until = max(
+                    self._blocked_until, float(headers["x-ratelimit-reset"]) + 1
+                )
+            except (KeyError, ValueError):
+                self._blocked_until = max(self._blocked_until, self._clock() + 60)
 
     def _wait_if_needed(self) -> None:
-        delay = self._blocked_until - self._clock()
+        with self._rate_lock:
+            delay = self._blocked_until - self._clock()
         if delay > 0:
             self._sleep(delay)
 
@@ -359,14 +369,30 @@ class GitHubClient:
             self._wait_if_needed()
             return
         retry_after = headers.get("retry-after")
-        self._sleep(float(retry_after) if retry_after else 2**attempt)
+        if retry_after:
+            with self._rate_lock:
+                self._blocked_until = max(
+                    self._blocked_until, self._clock() + float(retry_after)
+                )
+            self._wait_if_needed()
+            return
+        self._sleep(2**attempt)
 
     @staticmethod
-    def _is_retryable(status: int, headers: Mapping[str, str]) -> bool:
+    def _is_retryable(
+        status: int, headers: Mapping[str, str], message: str = ""
+    ) -> bool:
         return (
             status == 429
             or 500 <= status <= 599
-            or (status == 403 and headers.get("x-ratelimit-remaining") == "0")
+            or (
+                status == 403
+                and (
+                    headers.get("x-ratelimit-remaining") == "0"
+                    or "retry-after" in headers
+                    or "secondary rate limit" in message.lower()
+                )
+            )
         )
 
 

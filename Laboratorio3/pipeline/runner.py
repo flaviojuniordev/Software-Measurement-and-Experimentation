@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import date
+from time import monotonic
 from typing import Any, Callable
 
 from .collectors import (
@@ -54,13 +56,16 @@ def run_pipeline(
     if target_included is not None and target_included < 1:
         raise ValueError("target_included deve ser positivo")
 
+    progress(f"Descobrindo ate {config.candidate_limit} candidatos...")
     candidates = discover_repositories(
         client,
         minimum_stars=config.minimum_stars,
         limit=config.candidate_limit,
     )
+    progress(f"Descoberta concluida: {len(candidates)} candidatos.")
     selection_rows: list[dict[str, Any]] = []
     repository_rows: list[dict[str, Any]] = []
+    progress("Preparando checkpoint local...")
     state = CollectionState(config.output_dir / "collection_state.sqlite3")
     run_key = collection_run_key(
         {
@@ -75,6 +80,16 @@ def run_pipeline(
         }
     )
     completed = state.load_completed(run_key)
+    restored_included = sum(row is not None for _, row in completed.values())
+    progress(
+        f"Checkpoint carregado: {len(completed)} concluidos, "
+        f"{restored_included} validos."
+    )
+    candidates = _order_candidates(
+        candidates,
+        seed=config.candidate_order_seed,
+        completed=set(completed),
+    )
     git_collector = (
         GitMetadataCollector(config.git_cache_dir) if config.use_git_metadata else None
     )
@@ -85,6 +100,7 @@ def run_pipeline(
 
     for position, repository in enumerate(candidates, start=1):
         full_name = repository["full_name"]
+        repository_started = monotonic()
         progress(f"[{position}/{len(candidates)}] {full_name}")
         restored = completed.get(full_name)
         if restored is not None:
@@ -101,15 +117,18 @@ def run_pipeline(
         selection = _base_selection(repository, config.end_date)
 
         try:
+            progress("  verificando GitHub Actions")
             workflows = collect_workflows(client, full_name)
             selection["workflows_count"] = len(workflows)
             if not workflows:
                 selection["discard_reason"] = "no_github_actions"
                 state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
+                progress(f"  descartado: sem Actions ({monotonic() - repository_started:.1f}s)")
                 maybe_checkpoint()
                 continue
 
+            progress("  coletando contribuidores e releases")
             selection["contributors_count"] = count_contributors(client, full_name)
             releases = collect_releases(
                 client,
@@ -125,6 +144,10 @@ def run_pipeline(
                 selection["discard_reason"] = "insufficient_releases"
                 state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
+                progress(
+                    "  descartado: releases insuficientes "
+                    f"({monotonic() - repository_started:.1f}s)"
+                )
                 maybe_checkpoint()
                 continue
             selection["task1_included"] = True
@@ -132,12 +155,19 @@ def run_pipeline(
                 selection["discard_reason"] = "partial_release_volume_limit"
                 state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
+                progress(
+                    "  descartado: volume de releases do modo parcial "
+                    f"({monotonic() - repository_started:.1f}s)"
+                )
                 maybe_checkpoint()
                 continue
 
             default_branch = repository.get("default_branch")
             if not isinstance(default_branch, str) or not default_branch:
                 raise ValueError("repositorio sem default_branch")
+            progress(
+                f"  coletando workflow runs com {config.workflow_run_workers} workers"
+            )
             workflow_runs = collect_workflow_runs(
                 client,
                 full_name,
@@ -146,6 +176,8 @@ def run_pipeline(
                 end_date=config.end_date,
                 subdivide_large_windows=not fast_partial,
                 max_runs=PARTIAL_MAX_WORKFLOW_RUNS if fast_partial else None,
+                workers=config.workflow_run_workers,
+                progress=lambda message: progress(f"    {message}"),
             )
             selection["workflow_runs_count"] = len(workflow_runs)
             selection["valid_workflow_runs_count"] = count_valid_workflow_runs(
@@ -158,9 +190,14 @@ def run_pipeline(
                 selection["discard_reason"] = "insufficient_workflow_runs"
                 state.save_completed(run_key, full_name, selection, None)
                 selection_rows.append(selection)
+                progress(
+                    "  descartado: workflow runs insuficientes "
+                    f"({monotonic() - repository_started:.1f}s)"
+                )
                 maybe_checkpoint()
                 continue
 
+            progress("  coletando tags e commits entre releases")
             tags = (
                 collect_tags(client, full_name, git_collector=git_collector)
                 if config.collect_tags
@@ -240,7 +277,11 @@ def run_pipeline(
                 full_name,
                 payload,
             )
-            state.save_completed(run_key, full_name, selection, row, payload)
+            state.save_completed(run_key, full_name, selection, row)
+            progress(
+                f"  incluido ({len(repository_rows)} validos; "
+                f"{monotonic() - repository_started:.1f}s)"
+            )
         except (
             GitHubAPIError,
             WorkflowRunWindowLimitError,
@@ -259,6 +300,7 @@ def run_pipeline(
 
     maybe_checkpoint(force=True)
     if config.export_parquet:
+        progress("Exportando tabelas Parquet em lotes...")
         export_parquet(
             config.output_dir,
             state,
@@ -266,6 +308,7 @@ def run_pipeline(
             selection_rows=selection_rows,
             repository_rows=repository_rows,
         )
+        progress("Exportacao Parquet concluida.")
     state.close()
     return {
         "candidates": len(candidates),
@@ -318,3 +361,30 @@ def _repository_metadata(repository: dict[str, Any]) -> dict[str, Any]:
 
 def _level_value(level: DoraLevel | None) -> str | None:
     return level.value if level is not None else None
+
+
+def _order_candidates(
+    candidates: list[dict[str, Any]],
+    *,
+    seed: int,
+    completed: set[str],
+) -> list[dict[str, Any]]:
+    """Prioriza retomadas e ordena os demais por sorteio deterministico."""
+
+    restored = [
+        repository
+        for repository in candidates
+        if repository.get("full_name") in completed
+    ]
+    pending = [
+        repository
+        for repository in candidates
+        if repository.get("full_name") not in completed
+    ]
+
+    def stable_key(repository: dict[str, Any]) -> str:
+        full_name = str(repository.get("full_name") or "")
+        return hashlib.sha256(f"{seed}:{full_name}".encode("utf-8")).hexdigest()
+
+    pending.sort(key=stable_key)
+    return restored + pending

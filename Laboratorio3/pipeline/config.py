@@ -38,7 +38,9 @@ class PipelineConfig:
     output_dir: Path = Path("data")
     collect_tags: bool = True
     use_git_metadata: bool = True
+    candidate_order_seed: int = 42
     export_parquet: bool = True
+    workflow_run_workers: int = 4
     max_retries: int = 5
     request_timeout_seconds: int = 30
 
@@ -91,7 +93,9 @@ class PipelineConfig:
             output_dir=_resolve_path(base_dir, runtime.get("output_dir", "data")),
             collect_tags=bool(collection.get("collect_tags", True)),
             use_git_metadata=bool(collection.get("use_git_metadata", True)),
+            candidate_order_seed=int(collection.get("candidate_order_seed", 42)),
             export_parquet=bool(runtime.get("export_parquet", True)),
+            workflow_run_workers=int(runtime.get("workflow_run_workers", 4)),
             max_retries=int(runtime.get("max_retries", 5)),
             request_timeout_seconds=int(runtime.get("request_timeout_seconds", 30)),
         )
@@ -118,6 +122,8 @@ class PipelineConfig:
             raise ConfigError("minimum_workflow_runs deve ser positivo.")
         if self.max_retries < 0:
             raise ConfigError("max_retries nao pode ser negativo.")
+        if not 1 <= self.workflow_run_workers <= 16:
+            raise ConfigError("workflow_run_workers deve estar entre 1 e 16.")
         if self.request_timeout_seconds < 1:
             raise ConfigError("request_timeout_seconds deve ser positivo.")
 
