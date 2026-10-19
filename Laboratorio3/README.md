@@ -15,13 +15,14 @@ repositorios sem Actions, com menos de cinco releases publicadas ou com menos de
 - cliente REST/GraphQL proprio, sem PyGithub, com HTTPS via `certifi`;
 - autenticacao por `GITHUB_TOKEN`;
 - paginacao, cache comprimido, retomada, rate limit e backoff exponencial;
-- descoberta por faixas de estrelas, sem o teto de 1.000 resultados da busca;
+- descoberta por faixas de estrelas, sem o teto de 1.000 resultados da busca,
+  seguida de ordem pseudoaleatoria reproduzivel;
 - selecao de candidatos, metadados, contribuidores e funil;
 - releases por GraphQL, com fallback REST paginado em lotes de 30;
 - tags e commits por Git parcial, sem blobs, com fallback para a API REST;
 - deployment frequency e lead time por release e por commit;
-- coleta adaptativa de workflow runs, subdividindo somente intervalos com 1.000
-  ou mais resultados;
+- coleta adaptativa e concorrente de workflow runs, subdividindo somente
+  intervalos com 1.000 ou mais resultados;
 - filtro defensivo para `push` no default branch e deduplicacao por `run.id`;
 - CFR baseado em CI, episodios de falha, recuperacao e censura;
 - CFR por entrega com heuristica versionada de release corretiva e censura;
@@ -86,8 +87,9 @@ monopolize a execucao. A coleta definitiva deve omitir essa opcao para remover
 esses limites, subdividir os intervalos e produzir a amostra completa exigida.
 
 `config.json` tambem controla os limites de estrelas, releases e workflow runs,
-coleta de tags, uso do transporte Git, diretorio do cache Git, exportacao
-Parquet, tentativas e timeout. Nenhuma data academica fica oculta no codigo.
+coleta de tags, uso do transporte Git, diretorio do cache Git, semente da ordem
+dos candidatos, exportacao Parquet, quantidade de workers, tentativas e timeout.
+Nenhuma data academica fica oculta no codigo.
 
 ## Arquitetura otimizada da coleta
 
@@ -96,9 +98,9 @@ as formulas do experimento:
 
 | Dado | Fonte principal | Salvaguarda |
 |---|---|---|
-| candidatos, repositorio, contribuidores e workflows | REST | cache e retry |
+| candidatos, repositorio, contribuidores e workflows | REST | faixas de estrelas, ordem com semente 42, cache e retry |
 | releases publicadas | GraphQL com campos minimos | REST, `per_page=30` |
-| workflow runs | REST por intervalo adaptativo | subdivisao antes do teto de 1.000 |
+| workflow runs | REST adaptativo, com 4 workers | subdivisao antes do teto de 1.000 |
 | tags | `git ls-remote --tags` | REST paginado |
 | commits entre releases | fetch Git parcial das duas tags e `git log` | endpoint REST `compare` |
 
@@ -109,10 +111,18 @@ do repositorio `psf/requests`: Git e REST retornaram os mesmos 128 SHAs. Essa
 estrategia preserva os dados usados nas metricas e evita armazenar respostas
 REST gigantes de comparacoes.
 
-O SQLite registra cada repositorio concluido e permite retomar no proximo
-candidato depois de uma interrupcao. Os CSVs continuam sendo os artefatos
-academicos; Parquet e uma representacao normalizada adicional para leitura e
-analise eficientes.
+O SQLite registra somente o resultado de cada repositorio concluido e permite
+retomar no proximo candidato depois de uma interrupcao. Os payloads volumosos
+ficam apenas em `data/raw`, sem uma segunda copia no banco. Os CSVs continuam
+sendo os artefatos academicos; Parquet e uma representacao normalizada adicional
+gerada em lotes para leitura e analise eficientes.
+
+Os candidatos ainda precisam satisfazer `stars:>1000`, mas os ainda nao
+processados nao sao percorridos do maior para o menor numero de estrelas. Eles
+sao ordenados por uma chave pseudoaleatoria estavel com semente 42. Isso evita
+concentrar o inicio da coleta nos maiores e mais ativos projetos e reduz vies de
+popularidade. Ao retomar, candidatos ja concluidos aparecem primeiro, garantindo
+que uma coleta de 100 validos possa ser ampliada para 300 sem perder os 100.
 
 ## Coleta de workflow runs
 
@@ -121,6 +131,12 @@ Cada consulta usa `branch=<default_branch>`, `event=push` e
 `created=<inicio>..<fim>`. Se o `total_count` indicar 1.000 resultados ou mais,
 o intervalo e dividido ao meio antes de buscar as paginas restantes. O processo
 continua recursivamente ate cada consulta ficar abaixo do teto do GitHub.
+
+Intervalos independentes e paginas adicionais sao buscados com concorrencia
+limitada. O padrao de quatro workers aumenta o aproveitamento da cota sem criar
+concorrencia ilimitada; o mesmo controle de rate limit e retry continua sendo
+compartilhado por todas as requisicoes. O terminal informa a quantidade de
+intervalos e paginas processadas dentro de cada repositorio.
 
 Os resultados ainda sao validados localmente e deduplicados por `run.id`. Se um
 unico dia atingir o teto de 1.000 resultados, a coleta falha explicitamente em
@@ -251,8 +267,8 @@ arquivo temporario e troca atomica, portanto respostas interrompidas nao entram
 no cache. `IncompleteRead`, erros HTTP transitorios e JSON incompleto reutilizam
 o mesmo retry/backoff do cliente.
 
-O arquivo `data/collection_state.sqlite3` guarda, em transacao, os repositorios
-ja concluidos e seus registros normalizados. Executar novamente o mesmo comando
+O arquivo `data/collection_state.sqlite3` guarda, em transacao, somente os
+repositorios ja concluidos e suas linhas consolidadas. Executar novamente o mesmo comando
 reaproveita o cache HTTP, o cache Git e esse estado, continuando sem recoletar os
 repositorios finalizados. Nao remova esses artefatos durante uma execucao.
 

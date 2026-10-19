@@ -46,17 +46,21 @@ A mudanca de arquitetura nao altera a metodologia academica. Ela reduz o volume
 transferido e torna interrupcoes recuperaveis:
 
 1. a busca de candidatos percorre faixas de estrelas para superar o limite de
-   1.000 resultados de uma unica busca do GitHub;
+   1.000 resultados de uma unica busca do GitHub; os candidatos ainda nao
+   processados recebem uma ordem pseudoaleatoria reproduzivel com semente 42,
+   evitando concentrar a amostra somente nos projetos de maior popularidade;
 2. releases usam GraphQL com apenas os campos necessarios; o fallback REST usa
    paginas de 30 itens;
 3. workflow runs comecam em uma consulta anual e o intervalo e subdividido
-   recursivamente quando o `total_count` alcanca o teto de 1.000;
+   recursivamente quando o `total_count` alcanca o teto de 1.000; intervalos e
+   paginas independentes usam concorrencia limitada e o mesmo rate limiter;
 4. tags usam `git ls-remote`, sem checkout, e possuem fallback REST;
 5. commits entre duas releases sao obtidos de um repositorio bare parcial,
    baixando as tags envolvidas sem blobs e executando `git log`; o endpoint
    REST `compare` permanece como fallback;
-6. respostas completas sao comprimidas, e um checkpoint SQLite registra cada
-   repositorio concluido. Tabelas Parquet normalizadas sao exportadas como
+6. respostas completas sao comprimidas, e um checkpoint SQLite registra apenas
+   o resultado de cada repositorio concluido, sem duplicar os workflow runs.
+   Tabelas Parquet normalizadas sao exportadas em lotes a partir dos JSONs como
    representacao adicional aos CSVs e JSONs exigidos.
 
 A equivalencia do caminho Git foi validada em `psf/requests`, entre as tags
