@@ -17,7 +17,7 @@ Foram produzidos os seguintes artefatos:
 Os dois primeiros arquivos seguem o mesmo esquema minimo usado nas planilhas
 oficiais de Flavio. Os arquivos detalhados registram
 `evaluator=Luidi Cadete Silva` e `eligible_for_human_agreement=sim`, porque estes
-julgamentos foram feitos por Luidi e correspondem a sua rotulacao
+julgamentos foram feitos por Luidi e correspondem a sua rotulação
 humana independente.
 
 ## Criterios aplicados
