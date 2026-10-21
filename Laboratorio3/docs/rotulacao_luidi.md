@@ -1,4 +1,4 @@
-# Rotulacao independente de Luidi Cadete Silva
+# Rotulção independente de Luidi Cadete Silva
 
 Luidi realizou uma classificacao independente da amostra-ouro, sem usar os
 rotulos preenchidos por Flavio nem a saida da heuristica automatica como fonte
