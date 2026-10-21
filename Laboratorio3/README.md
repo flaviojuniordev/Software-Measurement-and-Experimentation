@@ -234,10 +234,11 @@ python -m pipeline.validation gold-sample \
   --allow-partial
 ```
 
-Os templates dos dois avaliadores deixam todos os julgamentos humanos vazios,
-nunca incluem a previsao da heuristica e trazem links para a release e para a
-comparacao de commits. Depois de Flavio e Luidi preencherem seus arquivos de
-forma independente, a concordancia e as pendencias sao geradas com:
+Os templates dos dois avaliadores sao gerados com todos os julgamentos humanos
+vazios, nunca incluem a previsao da heuristica e trazem links para a release e
+para a comparacao de commits. Flavio ja preencheu suas planilhas com julgamentos
+humanos independentes, documentados em `docs/rotulacao_flavio.md`. Depois que
+Luidi preencher as suas, a concordancia e as pendencias sao geradas com:
 
 ```bash
 python -m pipeline.validation agreement \

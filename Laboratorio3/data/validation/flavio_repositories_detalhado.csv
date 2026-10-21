@@ -1,0 +1,61 @@
+evaluator,repository,project_type,releases_are_deliveries,type_confidence,delivery_confidence,rationale,eligible_for_human_agreement
+Flavio,ZhuLinsen/daily_stock_analysis,aplicacao/servico,sim,alta,media,Sistema de analise de acoes com dashboard e notificacoes; as versoes aparentam entregar o produto executavel.,sim
+Flavio,Chocobozzz/PeerTube,aplicacao/servico,sim,alta,alta,Plataforma federada de streaming de video distribuida como produto utilizavel.,sim
+Flavio,golangci/golangci-lint,ferramenta CLI,sim,alta,alta,Executor de linters para Go usado principalmente pela linha de comando.,sim
+Flavio,filamentphp/filament,biblioteca/framework,sim,alta,alta,Framework de interface para Laravel publicado em versoes consumidas por desenvolvedores.,sim
+Flavio,electron-userland/electron-builder,ferramenta CLI,sim,alta,alta,Ferramenta de build e empacotamento de aplicativos Electron.,sim
+Flavio,apache/pulsar,aplicacao/servico,sim,alta,alta,Sistema distribuido de mensageria executado como servico.,sim
+Flavio,ToolJet/ToolJet,aplicacao/servico,sim,alta,alta,Plataforma para criar ferramentas internas e aplicacoes empresariais.,sim
+Flavio,vercel/turborepo,ferramenta CLI,sim,alta,alta,Sistema de build para monorepos operado por comandos.,sim
+Flavio,SagerNet/sing-box,aplicacao/servico,sim,media,media,Plataforma universal de proxy; confirmar se todas as tags representam distribuicoes aos usuarios.,sim
+Flavio,prometheus/node_exporter,aplicacao/servico,sim,alta,alta,Servico exportador de metricas de maquina para Prometheus.,sim
+Flavio,DuarteSantos8/openGym,aplicacao/servico,sim,alta,alta,Aplicacao web auto-hospedada para planejamento e registro de treinos.,sim
+Flavio,Devolutions/UniGetUI,aplicacao/servico,sim,alta,alta,Aplicacao grafica para gerenciar gerenciadores de pacotes.,sim
+Flavio,Significant-Gravitas/AutoGPT,aplicacao/servico,sim,media,media,Plataforma e conjunto de ferramentas para agentes; o escopo misto recomenda revisao.,sim
+Flavio,dream-num/univer,biblioteca/framework,sim,alta,alta,SDK e runtime para planilhas documentos e apresentacoes.,sim
+Flavio,explosion/spaCy,biblioteca/framework,sim,alta,alta,Biblioteca Python de processamento de linguagem natural.,sim
+Flavio,tinacms/tinacms,aplicacao/servico,sim,alta,alta,Sistema de gerenciamento de conteudo headless distribuido como produto.,sim
+Flavio,ChromeDevTools/chrome-devtools-mcp,aplicacao/servico,sim,alta,media,Servidor MCP que expoe o Chrome DevTools para agentes.,sim
+Flavio,web-infra-dev/midscene,biblioteca/framework,sim,alta,alta,Framework de testes E2E e automacao de interfaces em linguagem natural.,sim
+Flavio,danielgatis/rembg,ferramenta CLI,sim,media,alta,Ferramenta de remocao de fundo com uso principal por comando embora tambem possua API.,sim
+Flavio,postcss/autoprefixer,biblioteca/framework,sim,alta,alta,Plugin/biblioteca PostCSS consumido por outros projetos.,sim
+Flavio,earendil-works/pi,ferramenta CLI,sim,alta,alta,Toolkit de agentes que inclui explicitamente uma CLI de programacao.,sim
+Flavio,rtk-ai/rtk,ferramenta CLI,sim,alta,alta,Proxy CLI para reduzir o consumo de tokens de comandos de desenvolvimento.,sim
+Flavio,gpujs/gpu.js,biblioteca/framework,sim,alta,alta,Biblioteca JavaScript para computacao acelerada por GPU.,sim
+Flavio,AlistGo/alist,aplicacao/servico,sim,alta,alta,Servidor de arquivos e WebDAV executado como aplicacao.,sim
+Flavio,browseros-ai/BrowserOS,aplicacao/servico,sim,alta,alta,Navegador agentico distribuido como aplicacao multiplataforma.,sim
+Flavio,luongnv89/claude-howto,outro,incerto,alta,baixa,Repositorio de guia e exemplos; tags podem representar atualizacoes editoriais e nao entregas de software.,sim
+Flavio,bitwarden/server,aplicacao/servico,sim,alta,alta,Backend e infraestrutura do Bitwarden executados como servico.,sim
+Flavio,dragonflydb/dragonfly,aplicacao/servico,sim,alta,alta,Banco de dados e servidor compativel com Redis/Memcached.,sim
+Flavio,locustio/locust,ferramenta CLI,sim,alta,alta,Ferramenta de teste de carga normalmente iniciada pela linha de comando.,sim
+Flavio,nginx/nginx,aplicacao/servico,sim,alta,alta,Servidor web proxy e balanceador executado como servico.,sim
+Flavio,THU-MAIC/OpenMAIC,aplicacao/servico,sim,alta,media,Aplicacao de sala de aula interativa baseada em multiplos agentes.,sim
+Flavio,mobxjs/mobx,biblioteca/framework,sim,alta,alta,Biblioteca de gerenciamento de estado para JavaScript.,sim
+Flavio,matomo-org/matomo,aplicacao/servico,sim,alta,alta,Plataforma de analise web auto-hospedada.,sim
+Flavio,ggml-org/llama.cpp,biblioteca/framework,sim,media,alta,Motor e biblioteca de inferencia de LLM com executaveis associados.,sim
+Flavio,HKUDS/RAG-Anything,biblioteca/framework,sim,alta,alta,Framework para sistemas RAG multimodais.,sim
+Flavio,semaphoreui/semaphore,aplicacao/servico,sim,alta,alta,Interface e API para automacao de ferramentas DevOps.,sim
+Flavio,usebruno/bruno,aplicacao/servico,sim,alta,alta,IDE desktop para explorar e testar APIs.,sim
+Flavio,agentscope-ai/agentscope,biblioteca/framework,sim,alta,alta,Framework para construir executar e observar agentes.,sim
+Flavio,nextai-translator/nextai-translator,aplicacao/servico,sim,alta,alta,Extensao de navegador e aplicativo desktop de traducao.,sim
+Flavio,RSSNext/Folo,aplicacao/servico,sim,alta,alta,Leitor RSS com recursos de IA distribuido como aplicacao.,sim
+Flavio,vuejs/core,biblioteca/framework,sim,alta,alta,Framework JavaScript para interfaces web.,sim
+Flavio,huggingface/lerobot,biblioteca/framework,sim,alta,alta,Biblioteca e framework de aprendizado para robotica.,sim
+Flavio,modelscope/FunASR,biblioteca/framework,sim,alta,alta,Toolkit de reconhecimento de fala e inferencia.,sim
+Flavio,yt-dlp/yt-dlp,ferramenta CLI,sim,alta,alta,Downloader de audio e video explicitamente orientado a linha de comando.,sim
+Flavio,crimx/ext-saladict,aplicacao/servico,sim,alta,alta,Extensao de navegador de dicionario e traducao.,sim
+Flavio,PHP-CS-Fixer/PHP-CS-Fixer,ferramenta CLI,sim,alta,alta,Ferramenta automatica de correcao de padroes de codigo PHP.,sim
+Flavio,Intervention/image,biblioteca/framework,sim,alta,alta,Biblioteca PHP de processamento de imagens.,sim
+Flavio,element-plus/element-plus,biblioteca/framework,sim,alta,alta,Biblioteca de componentes de interface para Vue 3.,sim
+Flavio,honojs/hono,biblioteca/framework,sim,alta,alta,Framework web TypeScript baseado em Web Standards.,sim
+Flavio,Tencent/WeKnora,aplicacao/servico,sim,alta,alta,Plataforma de conhecimento e RAG executada como servico.,sim
+Flavio,schollz/croc,ferramenta CLI,sim,alta,alta,Ferramenta de transferencia segura de arquivos por linha de comando.,sim
+Flavio,modular/modular,outro,sim,media,media,Monorepositorio da plataforma Modular com linguagem runtime e produtos distintos; revisar a unidade de entrega.,sim
+Flavio,budtmo/docker-android,aplicacao/servico,sim,alta,alta,Solucao Android executada em conteiner com acesso remoto e automacao.,sim
+Flavio,mvanhorn/last30days-skill,outro,incerto,alta,baixa,Skill de agente e conteudo de pesquisa; tags podem nao representar uma entrega de software convencional.,sim
+Flavio,microg/GmsCore,aplicacao/servico,sim,alta,alta,Implementacao livre de servicos usados por aplicativos Android.,sim
+Flavio,discordjs/discord.js,biblioteca/framework,sim,alta,alta,Biblioteca JavaScript para interagir com a API do Discord.,sim
+Flavio,godotengine/godot,biblioteca/framework,sim,alta,alta,Motor e framework multiplataforma para desenvolvimento de jogos.,sim
+Flavio,QL-Win/QuickLook,aplicacao/servico,sim,alta,alta,Aplicacao Windows que implementa visualizacao rapida de arquivos.,sim
+Flavio,can1357/oh-my-pi,ferramenta CLI,sim,alta,alta,Agente de programacao com interface de terminal e TUI.,sim
+Flavio,urfave/cli,biblioteca/framework,sim,alta,alta,Pacote Go usado para construir outras ferramentas de linha de comando.,sim

@@ -1,0 +1,61 @@
+repository,suggested_project_type,suggested_releases_are_deliveries,type_confidence,delivery_confidence,rationale,review_status,not_for_agreement
+ZhuLinsen/daily_stock_analysis,aplicacao/servico,sim,alta,media,"Sistema de analise de acoes com dashboard e notificacoes; as versoes aparentam entregar o produto executavel.",pendente,sim
+Chocobozzz/PeerTube,aplicacao/servico,sim,alta,alta,"Plataforma federada de streaming de video distribuida como produto utilizavel.",pendente,sim
+golangci/golangci-lint,ferramenta CLI,sim,alta,alta,"Executor de linters para Go usado principalmente pela linha de comando.",pendente,sim
+filamentphp/filament,biblioteca/framework,sim,alta,alta,"Framework de interface para Laravel publicado em versoes consumidas por desenvolvedores.",pendente,sim
+electron-userland/electron-builder,ferramenta CLI,sim,alta,alta,"Ferramenta de build e empacotamento de aplicativos Electron.",pendente,sim
+apache/pulsar,aplicacao/servico,sim,alta,alta,"Sistema distribuido de mensageria executado como servico.",pendente,sim
+ToolJet/ToolJet,aplicacao/servico,sim,alta,alta,"Plataforma para criar ferramentas internas e aplicacoes empresariais.",pendente,sim
+vercel/turborepo,ferramenta CLI,sim,alta,alta,"Sistema de build para monorepos operado por comandos.",pendente,sim
+SagerNet/sing-box,aplicacao/servico,sim,media,media,"Plataforma universal de proxy; confirmar se todas as tags representam distribuicoes aos usuarios.",pendente,sim
+prometheus/node_exporter,aplicacao/servico,sim,alta,alta,"Servico exportador de metricas de maquina para Prometheus.",pendente,sim
+DuarteSantos8/openGym,aplicacao/servico,sim,alta,alta,"Aplicacao web auto-hospedada para planejamento e registro de treinos.",pendente,sim
+Devolutions/UniGetUI,aplicacao/servico,sim,alta,alta,"Aplicacao grafica para gerenciar gerenciadores de pacotes.",pendente,sim
+Significant-Gravitas/AutoGPT,aplicacao/servico,sim,media,media,"Plataforma e conjunto de ferramentas para agentes; o escopo misto recomenda revisao.",pendente,sim
+dream-num/univer,biblioteca/framework,sim,alta,alta,"SDK e runtime para planilhas documentos e apresentacoes.",pendente,sim
+explosion/spaCy,biblioteca/framework,sim,alta,alta,"Biblioteca Python de processamento de linguagem natural.",pendente,sim
+tinacms/tinacms,aplicacao/servico,sim,alta,alta,"Sistema de gerenciamento de conteudo headless distribuido como produto.",pendente,sim
+ChromeDevTools/chrome-devtools-mcp,aplicacao/servico,sim,alta,media,"Servidor MCP que expoe o Chrome DevTools para agentes.",pendente,sim
+web-infra-dev/midscene,biblioteca/framework,sim,alta,alta,"Framework de testes E2E e automacao de interfaces em linguagem natural.",pendente,sim
+danielgatis/rembg,ferramenta CLI,sim,media,alta,"Ferramenta de remocao de fundo com uso principal por comando embora tambem possua API.",pendente,sim
+postcss/autoprefixer,biblioteca/framework,sim,alta,alta,"Plugin/biblioteca PostCSS consumido por outros projetos.",pendente,sim
+earendil-works/pi,ferramenta CLI,sim,alta,alta,"Toolkit de agentes que inclui explicitamente uma CLI de programacao.",pendente,sim
+rtk-ai/rtk,ferramenta CLI,sim,alta,alta,"Proxy CLI para reduzir o consumo de tokens de comandos de desenvolvimento.",pendente,sim
+gpujs/gpu.js,biblioteca/framework,sim,alta,alta,"Biblioteca JavaScript para computacao acelerada por GPU.",pendente,sim
+AlistGo/alist,aplicacao/servico,sim,alta,alta,"Servidor de arquivos e WebDAV executado como aplicacao.",pendente,sim
+browseros-ai/BrowserOS,aplicacao/servico,sim,alta,alta,"Navegador agentico distribuido como aplicacao multiplataforma.",pendente,sim
+luongnv89/claude-howto,outro,incerto,alta,baixa,"Repositorio de guia e exemplos; tags podem representar atualizacoes editoriais e nao entregas de software.",pendente,sim
+bitwarden/server,aplicacao/servico,sim,alta,alta,"Backend e infraestrutura do Bitwarden executados como servico.",pendente,sim
+dragonflydb/dragonfly,aplicacao/servico,sim,alta,alta,"Banco de dados e servidor compativel com Redis/Memcached.",pendente,sim
+locustio/locust,ferramenta CLI,sim,alta,alta,"Ferramenta de teste de carga normalmente iniciada pela linha de comando.",pendente,sim
+nginx/nginx,aplicacao/servico,sim,alta,alta,"Servidor web proxy e balanceador executado como servico.",pendente,sim
+THU-MAIC/OpenMAIC,aplicacao/servico,sim,alta,media,"Aplicacao de sala de aula interativa baseada em multiplos agentes.",pendente,sim
+mobxjs/mobx,biblioteca/framework,sim,alta,alta,"Biblioteca de gerenciamento de estado para JavaScript.",pendente,sim
+matomo-org/matomo,aplicacao/servico,sim,alta,alta,"Plataforma de analise web auto-hospedada.",pendente,sim
+ggml-org/llama.cpp,biblioteca/framework,sim,media,alta,"Motor e biblioteca de inferencia de LLM com executaveis associados.",pendente,sim
+HKUDS/RAG-Anything,biblioteca/framework,sim,alta,alta,"Framework para sistemas RAG multimodais.",pendente,sim
+semaphoreui/semaphore,aplicacao/servico,sim,alta,alta,"Interface e API para automacao de ferramentas DevOps.",pendente,sim
+usebruno/bruno,aplicacao/servico,sim,alta,alta,"IDE desktop para explorar e testar APIs.",pendente,sim
+agentscope-ai/agentscope,biblioteca/framework,sim,alta,alta,"Framework para construir executar e observar agentes.",pendente,sim
+nextai-translator/nextai-translator,aplicacao/servico,sim,alta,alta,"Extensao de navegador e aplicativo desktop de traducao.",pendente,sim
+RSSNext/Folo,aplicacao/servico,sim,alta,alta,"Leitor RSS com recursos de IA distribuido como aplicacao.",pendente,sim
+vuejs/core,biblioteca/framework,sim,alta,alta,"Framework JavaScript para interfaces web.",pendente,sim
+huggingface/lerobot,biblioteca/framework,sim,alta,alta,"Biblioteca e framework de aprendizado para robotica.",pendente,sim
+modelscope/FunASR,biblioteca/framework,sim,alta,alta,"Toolkit de reconhecimento de fala e inferencia.",pendente,sim
+yt-dlp/yt-dlp,ferramenta CLI,sim,alta,alta,"Downloader de audio e video explicitamente orientado a linha de comando.",pendente,sim
+crimx/ext-saladict,aplicacao/servico,sim,alta,alta,"Extensao de navegador de dicionario e traducao.",pendente,sim
+PHP-CS-Fixer/PHP-CS-Fixer,ferramenta CLI,sim,alta,alta,"Ferramenta automatica de correcao de padroes de codigo PHP.",pendente,sim
+Intervention/image,biblioteca/framework,sim,alta,alta,"Biblioteca PHP de processamento de imagens.",pendente,sim
+element-plus/element-plus,biblioteca/framework,sim,alta,alta,"Biblioteca de componentes de interface para Vue 3.",pendente,sim
+honojs/hono,biblioteca/framework,sim,alta,alta,"Framework web TypeScript baseado em Web Standards.",pendente,sim
+Tencent/WeKnora,aplicacao/servico,sim,alta,alta,"Plataforma de conhecimento e RAG executada como servico.",pendente,sim
+schollz/croc,ferramenta CLI,sim,alta,alta,"Ferramenta de transferencia segura de arquivos por linha de comando.",pendente,sim
+modular/modular,outro,sim,media,media,"Monorepositorio da plataforma Modular com linguagem runtime e produtos distintos; revisar a unidade de entrega.",pendente,sim
+budtmo/docker-android,aplicacao/servico,sim,alta,alta,"Solucao Android executada em conteiner com acesso remoto e automacao.",pendente,sim
+mvanhorn/last30days-skill,outro,incerto,alta,baixa,"Skill de agente e conteudo de pesquisa; tags podem nao representar uma entrega de software convencional.",pendente,sim
+microg/GmsCore,aplicacao/servico,sim,alta,alta,"Implementacao livre de servicos usados por aplicativos Android.",pendente,sim
+discordjs/discord.js,biblioteca/framework,sim,alta,alta,"Biblioteca JavaScript para interagir com a API do Discord.",pendente,sim
+godotengine/godot,biblioteca/framework,sim,alta,alta,"Motor e framework multiplataforma para desenvolvimento de jogos.",pendente,sim
+QL-Win/QuickLook,aplicacao/servico,sim,alta,alta,"Aplicacao Windows que implementa visualizacao rapida de arquivos.",pendente,sim
+can1357/oh-my-pi,ferramenta CLI,sim,alta,alta,"Agente de programacao com interface de terminal e TUI.",pendente,sim
+urfave/cli,biblioteca/framework,sim,alta,alta,"Pacote Go usado para construir outras ferramentas de linha de comando.",pendente,sim
