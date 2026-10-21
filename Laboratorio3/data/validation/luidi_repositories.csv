@@ -1,61 +1,61 @@
 repository,project_type,releases_are_deliveries
-ZhuLinsen/daily_stock_analysis,,
-Chocobozzz/PeerTube,,
-golangci/golangci-lint,,
-filamentphp/filament,,
-electron-userland/electron-builder,,
-apache/pulsar,,
-ToolJet/ToolJet,,
-vercel/turborepo,,
-SagerNet/sing-box,,
-prometheus/node_exporter,,
-DuarteSantos8/openGym,,
-Devolutions/UniGetUI,,
-Significant-Gravitas/AutoGPT,,
-dream-num/univer,,
-explosion/spaCy,,
-tinacms/tinacms,,
-ChromeDevTools/chrome-devtools-mcp,,
-web-infra-dev/midscene,,
-danielgatis/rembg,,
-postcss/autoprefixer,,
-earendil-works/pi,,
-rtk-ai/rtk,,
-gpujs/gpu.js,,
-AlistGo/alist,,
-browseros-ai/BrowserOS,,
-luongnv89/claude-howto,,
-bitwarden/server,,
-dragonflydb/dragonfly,,
-locustio/locust,,
-nginx/nginx,,
-THU-MAIC/OpenMAIC,,
-mobxjs/mobx,,
-matomo-org/matomo,,
-ggml-org/llama.cpp,,
-HKUDS/RAG-Anything,,
-semaphoreui/semaphore,,
-usebruno/bruno,,
-agentscope-ai/agentscope,,
-nextai-translator/nextai-translator,,
-RSSNext/Folo,,
-vuejs/core,,
-huggingface/lerobot,,
-modelscope/FunASR,,
-yt-dlp/yt-dlp,,
-crimx/ext-saladict,,
-PHP-CS-Fixer/PHP-CS-Fixer,,
-Intervention/image,,
-element-plus/element-plus,,
-honojs/hono,,
-Tencent/WeKnora,,
-schollz/croc,,
-modular/modular,,
-budtmo/docker-android,,
-mvanhorn/last30days-skill,,
-microg/GmsCore,,
-discordjs/discord.js,,
-godotengine/godot,,
-QL-Win/QuickLook,,
-can1357/oh-my-pi,,
-urfave/cli,,
+ZhuLinsen/daily_stock_analysis,aplicacao/servico,sim
+Chocobozzz/PeerTube,aplicacao/servico,sim
+golangci/golangci-lint,ferramenta CLI,sim
+filamentphp/filament,biblioteca/framework,sim
+electron-userland/electron-builder,ferramenta CLI,sim
+apache/pulsar,aplicacao/servico,sim
+ToolJet/ToolJet,aplicacao/servico,sim
+vercel/turborepo,ferramenta CLI,sim
+SagerNet/sing-box,ferramenta CLI,sim
+prometheus/node_exporter,aplicacao/servico,sim
+DuarteSantos8/openGym,aplicacao/servico,sim
+Devolutions/UniGetUI,aplicacao/servico,sim
+Significant-Gravitas/AutoGPT,aplicacao/servico,sim
+dream-num/univer,biblioteca/framework,sim
+explosion/spaCy,biblioteca/framework,sim
+tinacms/tinacms,biblioteca/framework,sim
+ChromeDevTools/chrome-devtools-mcp,ferramenta CLI,sim
+web-infra-dev/midscene,biblioteca/framework,sim
+danielgatis/rembg,ferramenta CLI,sim
+postcss/autoprefixer,biblioteca/framework,sim
+earendil-works/pi,ferramenta CLI,sim
+rtk-ai/rtk,ferramenta CLI,sim
+gpujs/gpu.js,biblioteca/framework,sim
+AlistGo/alist,aplicacao/servico,sim
+browseros-ai/BrowserOS,aplicacao/servico,sim
+luongnv89/claude-howto,outro,incerto
+bitwarden/server,aplicacao/servico,sim
+dragonflydb/dragonfly,aplicacao/servico,sim
+locustio/locust,ferramenta CLI,sim
+nginx/nginx,aplicacao/servico,sim
+THU-MAIC/OpenMAIC,aplicacao/servico,sim
+mobxjs/mobx,biblioteca/framework,sim
+matomo-org/matomo,aplicacao/servico,sim
+ggml-org/llama.cpp,ferramenta CLI,sim
+HKUDS/RAG-Anything,biblioteca/framework,sim
+semaphoreui/semaphore,aplicacao/servico,sim
+usebruno/bruno,aplicacao/servico,sim
+agentscope-ai/agentscope,biblioteca/framework,sim
+nextai-translator/nextai-translator,aplicacao/servico,sim
+RSSNext/Folo,aplicacao/servico,sim
+vuejs/core,biblioteca/framework,sim
+huggingface/lerobot,biblioteca/framework,sim
+modelscope/FunASR,biblioteca/framework,sim
+yt-dlp/yt-dlp,ferramenta CLI,sim
+crimx/ext-saladict,aplicacao/servico,sim
+PHP-CS-Fixer/PHP-CS-Fixer,ferramenta CLI,sim
+Intervention/image,biblioteca/framework,sim
+element-plus/element-plus,biblioteca/framework,sim
+honojs/hono,biblioteca/framework,sim
+Tencent/WeKnora,aplicacao/servico,sim
+schollz/croc,ferramenta CLI,sim
+modular/modular,biblioteca/framework,sim
+budtmo/docker-android,outro,sim
+mvanhorn/last30days-skill,outro,sim
+microg/GmsCore,aplicacao/servico,sim
+discordjs/discord.js,biblioteca/framework,sim
+godotengine/godot,aplicacao/servico,sim
+QL-Win/QuickLook,aplicacao/servico,sim
+can1357/oh-my-pi,ferramenta CLI,sim
+urfave/cli,biblioteca/framework,sim
