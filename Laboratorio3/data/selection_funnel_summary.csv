@@ -1,6 +1,6 @@
 stage,count
-candidates_processed,140
-with_github_actions,131
-with_minimum_releases,69
-with_minimum_workflow_runs,30
-included_s01,30
+candidates_processed,922
+with_github_actions,759
+with_minimum_releases,365
+with_minimum_workflow_runs,300
+included_s01,300

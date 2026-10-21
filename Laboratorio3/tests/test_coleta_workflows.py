@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import threading
 from datetime import date
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 import pytest
 
@@ -10,23 +11,39 @@ from pipeline.collectors import (
     collect_workflow_runs,
     monthly_intervals,
 )
+from pipeline.github_client import GitHubResponse
 
 
 class FakeGitHubClient:
-    def __init__(self, responses: list[list[dict[str, Any]]]) -> None:
+    def __init__(self, responses: list[GitHubResponse]) -> None:
         self.responses = responses
-        self.calls: list[tuple[str, dict[str, str | int]]] = []
+        self.calls: list[tuple[str, dict[str, object] | None]] = []
 
-    def paginate(
+    def get(
         self,
         path: str,
-        params: Mapping[str, str | int],
-        *,
-        item_key: str | None = None,
-        limit: int | None = None,
-    ) -> Iterable[Mapping[str, Any]]:
-        self.calls.append((path, dict(params)))
-        return self.responses[len(self.calls) - 1]
+        params: Mapping[str, object] | None = None,
+    ) -> GitHubResponse:
+        self.calls.append((path, dict(params) if params else None))
+        return self.responses.pop(0)
+
+
+def page(
+    runs: list[dict[str, Any]],
+    *,
+    total_count: int | None = None,
+    next_url: str | None = None,
+) -> GitHubResponse:
+    headers = {"link": f'<{next_url}>; rel="next"'} if next_url else {}
+    return GitHubResponse(
+        url="runs",
+        status=200,
+        headers=headers,
+        data={
+            "total_count": len(runs) if total_count is None else total_count,
+            "workflow_runs": runs,
+        },
+    )
 
 
 def run(run_id: int, *, event: str = "push", branch: str = "main") -> dict[str, Any]:
@@ -57,11 +74,15 @@ def test_intervalo_rejeita_ordem_invalida() -> None:
         monthly_intervals(date(2025, 2, 1), date(2025, 1, 1))
 
 
-def test_coletor_envia_filtros_mensais_deduplica_e_refiltra() -> None:
+def test_coletor_usa_janela_adaptativa_pagina_deduplica_e_refiltra() -> None:
     client = FakeGitHubClient(
         [
-            [run(1), run(2), run(90, event="pull_request"), run(91, branch="dev")],
-            [run(2), run(3)],
+            page(
+                [run(1), run(2), run(90, event="pull_request"), run(91, branch="dev")],
+                total_count=6,
+                next_url="https://api.github.com/next",
+            ),
+            page([run(2), run(3)], total_count=6),
         ]
     )
     result = collect_workflow_runs(
@@ -73,17 +94,17 @@ def test_coletor_envia_filtros_mensais_deduplica_e_refiltra() -> None:
     )
 
     assert [item["id"] for item in result] == [1, 2, 3]
-    assert [call[1]["created"] for call in client.calls] == [
-        "2025-01-15..2025-01-31",
-        "2025-02-01..2025-02-20",
-    ]
-    assert all(call[0] == "/repos/acme/project/actions/runs" for call in client.calls)
-    assert all(call[1]["branch"] == "main" for call in client.calls)
-    assert all(call[1]["event"] == "push" for call in client.calls)
+    assert client.calls[0][1]["created"] == "2025-01-15..2025-02-20"
+    assert client.calls[0][1]["branch"] == "main"
+    assert client.calls[0][1]["event"] == "push"
+    assert client.calls[0][1]["exclude_pull_requests"] is True
+    assert client.calls[1] == ("https://api.github.com/next", None)
 
 
 def test_coletor_rejeita_run_sem_id() -> None:
-    client = FakeGitHubClient([[{"event": "push", "head_branch": "main"}]])
+    client = FakeGitHubClient(
+        [page([{"event": "push", "head_branch": "main"}])]
+    )
     with pytest.raises(ValueError, match="sem id"):
         collect_workflow_runs(
             client,
@@ -96,7 +117,11 @@ def test_coletor_rejeita_run_sem_id() -> None:
 
 def test_coletor_subdivide_mes_no_teto_da_api() -> None:
     client = FakeGitHubClient(
-        [[run(item) for item in range(1_000)], [run(1)], [run(2)]]
+        [
+            page([run(999)], total_count=1_000),
+            page([run(1)]),
+            page([run(2)]),
+        ]
     )
 
     result = collect_workflow_runs(
@@ -116,7 +141,7 @@ def test_coletor_subdivide_mes_no_teto_da_api() -> None:
 
 
 def test_coletor_rejeita_um_unico_dia_no_teto_da_api() -> None:
-    client = FakeGitHubClient([[run(item) for item in range(1_000)]])
+    client = FakeGitHubClient([page([run(1)], total_count=1_000)])
     with pytest.raises(WorkflowRunWindowLimitError, match="atingiu o teto"):
         collect_workflow_runs(
             client,
@@ -128,7 +153,7 @@ def test_coletor_rejeita_um_unico_dia_no_teto_da_api() -> None:
 
 
 def test_coletor_parcial_nao_subdivide_mes_no_teto_da_api() -> None:
-    client = FakeGitHubClient([[run(item) for item in range(1_000)]])
+    client = FakeGitHubClient([page([run(1)], total_count=1_000)])
 
     with pytest.raises(WorkflowRunWindowLimitError, match="amostra parcial"):
         collect_workflow_runs(
@@ -144,9 +169,7 @@ def test_coletor_parcial_nao_subdivide_mes_no_teto_da_api() -> None:
 
 
 def test_coletor_parcial_rejeita_volume_total_acima_do_limite() -> None:
-    client = FakeGitHubClient(
-        [[run(1), run(2), run(3)], [run(4), run(5), run(6)]]
-    )
+    client = FakeGitHubClient([page([run(1)], total_count=6)])
 
     with pytest.raises(WorkflowRunWindowLimitError, match="ultrapassou 4"):
         collect_workflow_runs(
@@ -157,3 +180,36 @@ def test_coletor_parcial_rejeita_volume_total_acima_do_limite() -> None:
             end_date=date(2025, 2, 28),
             max_runs=4,
         )
+
+
+def test_coletor_busca_paginas_independentes_em_paralelo() -> None:
+    barrier = threading.Barrier(2)
+
+    class ConcurrentClient:
+        def get(self, path, params=None):
+            if params is not None:
+                return GitHubResponse(
+                    url="https://api.github.com/runs?page=1",
+                    status=200,
+                    headers={
+                        "link": (
+                            '<https://api.github.com/runs?page=2>; rel="next", '
+                            '<https://api.github.com/runs?page=3>; rel="last"'
+                        )
+                    },
+                    data={"total_count": 3, "workflow_runs": [run(1)]},
+                )
+            page_number = int(path.rsplit("=", 1)[-1])
+            barrier.wait(timeout=1)
+            return page([run(page_number)])
+
+    result = collect_workflow_runs(
+        ConcurrentClient(),
+        "acme/project",
+        default_branch="main",
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 1, 2),
+        workers=2,
+    )
+
+    assert [item["id"] for item in result] == [1, 2, 3]

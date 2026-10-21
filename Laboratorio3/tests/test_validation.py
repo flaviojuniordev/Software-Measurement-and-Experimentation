@@ -12,6 +12,7 @@ from pipeline.validation import (
     categorical_agreement,
     classification_metrics,
     evaluate_heuristic_from_consensus,
+    hydrate_gold_sample_payloads,
     prepare_gold_sample,
     sample_repository_releases,
     select_gold_repositories,
@@ -105,7 +106,12 @@ def test_partial_templates_have_blank_human_labels_and_no_heuristic(tmp_path):
         [release(number, number + 1) for number in range(6)],
     )
 
-    repository_path, release_path = prepare_gold_sample(
+    (
+        flavio_repository_path,
+        flavio_release_path,
+        luidi_repository_path,
+        luidi_release_path,
+    ) = prepare_gold_sample(
         dataset,
         raw_dir,
         tmp_path / "validation",
@@ -114,13 +120,64 @@ def test_partial_templates_have_blank_human_labels_and_no_heuristic(tmp_path):
         allow_partial=True,
     )
 
-    assert repository_path.name == "luidi_repositories_partial.csv"
-    assert release_path.name == "luidi_releases_partial.csv"
-    with release_path.open(encoding="utf-8", newline="") as handle:
+    assert flavio_repository_path.name == "flavio_repositories_partial.csv"
+    assert flavio_release_path.name == "flavio_releases_partial.csv"
+    assert luidi_repository_path.name == "luidi_repositories_partial.csv"
+    assert luidi_release_path.name == "luidi_releases_partial.csv"
+    with flavio_release_path.open(encoding="utf-8", newline="") as handle:
         release_rows = list(csv.DictReader(handle))
     assert len(release_rows) == 5
     assert all(row["is_corrective_manual"] == "" for row in release_rows)
     assert all("heuristic" not in row for row in release_rows)
+
+
+def test_hydration_collects_only_selected_release_comparisons(tmp_path, monkeypatch):
+    dataset = tmp_path / "repositories.csv"
+    raw_dir = tmp_path / "raw"
+    repositories = [f"org/repo-{number}" for number in range(60)]
+    write_csv(
+        dataset,
+        [{"full_name": repository} for repository in repositories],
+        ["full_name"],
+    )
+    releases = [release(number, number + 1) for number in range(6)]
+
+    monkeypatch.setattr(
+        "pipeline.validation.collect_releases",
+        lambda *_args, **_kwargs: releases,
+    )
+
+    def collect_comparisons(_client, _repository, pair, **_kwargs):
+        previous, current = pair
+        return [
+            {
+                "base_tag": previous["tag_name"],
+                "head_tag": current["tag_name"],
+                "release_published_at": current["published_at"],
+                "commits": [],
+                "error": None,
+            }
+        ]
+
+    monkeypatch.setattr(
+        "pipeline.validation.collect_release_comparisons", collect_comparisons
+    )
+
+    result = hydrate_gold_sample_payloads(
+        dataset,
+        raw_dir,
+        object(),
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 1, 31),
+        progress=lambda _message: None,
+    )
+
+    assert result == {"repositories": 60, "hydrated": 60, "reused": 0}
+    payload = json.loads(
+        (raw_dir / "org__repo-0.json").read_text(encoding="utf-8")
+    )
+    assert len(payload["releases"]) == 6
+    assert 4 <= len(payload["comparisons"]) <= 5
 
 
 def test_classification_metrics_calculates_precision_recall_f1_and_matrix():

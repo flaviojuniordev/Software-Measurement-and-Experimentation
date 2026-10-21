@@ -11,9 +11,11 @@ import sys
 from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 from urllib.parse import quote
 
+from .collectors import collect_release_comparisons, collect_releases
+from .github_client import GitHubAPIError, GitHubClient
 from .metrics import (
     CorrectiveReleaseHeuristic,
     calculate_release_change_failure_rate,
@@ -44,6 +46,7 @@ RELEASE_TEMPLATE_FIELDS = (
     "release_tag",
     "release_published_at",
     "release_url",
+    "comparison_url",
     "is_corrective_manual",
 )
 
@@ -150,8 +153,8 @@ def prepare_gold_sample(
     end_date: date,
     allow_partial: bool,
     random_state: int = DEFAULT_RANDOM_STATE,
-) -> tuple[Path, Path]:
-    """Gera os dois templates cegos de rotulagem do Luidi."""
+) -> tuple[Path, Path, Path, Path]:
+    """Gera templates cegos e independentes para os dois avaliadores."""
 
     dataset_rows = read_csv_rows(dataset_path)
     repositories = select_gold_repositories(
@@ -179,6 +182,15 @@ def prepare_gold_sample(
         )
         for release in selected:
             tag = str(release["tag_name"])
+            comparison = next(
+                (
+                    item
+                    for item in payloads[repository].get("comparisons", [])
+                    if item.get("head_tag") == tag
+                ),
+                {},
+            )
+            base_tag = str(comparison.get("base_tag") or "")
             release_rows.append(
                 {
                     "repository": repository,
@@ -189,17 +201,237 @@ def prepare_gold_sample(
                         or f"https://github.com/{repository}/releases/tag/"
                         f"{quote(tag, safe='')}"
                     ),
+                    "comparison_url": (
+                        f"https://github.com/{repository}/compare/"
+                        f"{quote(base_tag, safe='')}...{quote(tag, safe='')}"
+                        if base_tag
+                        else ""
+                    ),
                     "is_corrective_manual": "",
                 }
             )
 
     suffix = "_partial" if allow_partial else ""
     destination = Path(output_dir)
-    repository_path = destination / f"luidi_repositories{suffix}.csv"
-    release_path = destination / f"luidi_releases{suffix}.csv"
-    write_csv(repository_path, repository_rows, REPOSITORY_TEMPLATE_FIELDS)
-    write_csv(release_path, release_rows, RELEASE_TEMPLATE_FIELDS)
-    return repository_path, release_path
+    paths: list[Path] = []
+    for rater in ("flavio", "luidi"):
+        repository_path = destination / f"{rater}_repositories{suffix}.csv"
+        release_path = destination / f"{rater}_releases{suffix}.csv"
+        write_csv(repository_path, repository_rows, REPOSITORY_TEMPLATE_FIELDS)
+        write_csv(release_path, release_rows, RELEASE_TEMPLATE_FIELDS)
+        paths.extend((repository_path, release_path))
+    return paths[0], paths[1], paths[2], paths[3]
+
+
+def hydrate_gold_sample_payloads(
+    dataset_path: str | Path,
+    raw_dir: str | Path,
+    client: GitHubClient,
+    *,
+    start_date: date,
+    end_date: date,
+    random_state: int = DEFAULT_RANDOM_STATE,
+    progress: Callable[[str], None] = print,
+) -> dict[str, int]:
+    """Coleta somente releases e comparacoes exigidas pela amostra-ouro."""
+
+    repositories = select_gold_repositories(
+        read_csv_rows(dataset_path),
+        allow_partial=False,
+        random_state=random_state,
+    )
+    destination = Path(raw_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    hydrated = 0
+    reused = 0
+    failures: list[str] = []
+
+    for position, repository in enumerate(repositories, start=1):
+        progress(f"[{position}/{len(repositories)}] {repository}")
+        path = destination / f"{repository.replace('/', '__')}.json"
+        payload = _read_existing_payload(path, repository)
+        try:
+            releases = payload.get("releases", [])
+            if not _has_gold_release_sample(
+                repository,
+                releases,
+                start_date=start_date,
+                end_date=end_date,
+                random_state=random_state,
+            ):
+                releases = collect_releases(
+                    client,
+                    repository,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            selected = sample_repository_releases(
+                repository,
+                releases,
+                start_date=start_date,
+                end_date=end_date,
+                random_state=random_state,
+            )
+            comparisons = _collect_selected_comparisons(
+                client,
+                repository,
+                releases,
+                selected,
+                payload.get("comparisons", []),
+                start_date=start_date,
+                end_date=end_date,
+            )
+            ready_payload = {
+                **payload,
+                "repository": {
+                    **(payload.get("repository") or {}),
+                    "full_name": repository,
+                },
+                "releases": releases,
+                "comparisons": comparisons,
+            }
+            write_json(path, ready_payload, compact=True)
+            if payload and _payload_has_selected_comparisons(
+                releases,
+                selected,
+                payload.get("comparisons", []),
+            ):
+                reused += 1
+                progress("  payload reutilizado")
+            else:
+                hydrated += 1
+                progress("  payload preparado")
+        except (GitHubAPIError, ValidationError, ValueError) as exc:
+            failures.append(f"{repository}: {exc}")
+            progress(f"  erro: {exc}")
+
+    if failures:
+        raise ValidationError(
+            "nao foi possivel preparar toda a amostra-ouro: "
+            + " | ".join(failures)
+        )
+    return {
+        "repositories": len(repositories),
+        "hydrated": hydrated,
+        "reused": reused,
+    }
+
+
+def _read_existing_payload(path: Path, repository: str) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    payload_repository = (payload.get("repository") or {}).get("full_name")
+    return payload if payload_repository == repository else {}
+
+
+def _has_gold_release_sample(
+    repository: str,
+    releases: Sequence[Mapping[str, Any]],
+    *,
+    start_date: date,
+    end_date: date,
+    random_state: int,
+) -> bool:
+    try:
+        sample_repository_releases(
+            repository,
+            releases,
+            start_date=start_date,
+            end_date=end_date,
+            random_state=random_state,
+        )
+    except (ValidationError, ValueError, KeyError):
+        return False
+    return True
+
+
+def _collect_selected_comparisons(
+    client: GitHubClient,
+    repository: str,
+    releases: Sequence[Mapping[str, Any]],
+    selected: Sequence[Mapping[str, Any]],
+    existing: Sequence[Mapping[str, Any]],
+    *,
+    start_date: date,
+    end_date: date,
+) -> list[dict[str, Any]]:
+    main_releases = sorted(
+        (
+            dict(release)
+            for release in releases
+            if not release.get("draft")
+            and not release.get("prerelease")
+            and release.get("published_at")
+            and release.get("tag_name")
+        ),
+        key=lambda release: (
+            parse_github_datetime(release["published_at"], "published_at"),
+            str(release["tag_name"]),
+        ),
+    )
+    existing_by_head = {
+        str(item.get("head_tag")): dict(item)
+        for item in existing
+        if item.get("head_tag")
+    }
+    selected_tags = {str(release["tag_name"]) for release in selected}
+    comparisons = [dict(item) for item in existing]
+    for index, current in enumerate(main_releases):
+        tag = str(current["tag_name"])
+        if tag not in selected_tags or index == 0:
+            continue
+        previous = main_releases[index - 1]
+        cached = existing_by_head.get(tag)
+        if cached and cached.get("base_tag") == previous.get("tag_name"):
+            continue
+        collected = collect_release_comparisons(
+            client,
+            repository,
+            [previous, current],
+            start_date=start_date,
+            end_date=end_date,
+        )
+        comparisons.extend(collected)
+    return comparisons
+
+
+def _payload_has_selected_comparisons(
+    releases: Sequence[Mapping[str, Any]],
+    selected: Sequence[Mapping[str, Any]],
+    comparisons: Sequence[Mapping[str, Any]],
+) -> bool:
+    ordered_tags = [
+        str(release["tag_name"])
+        for release in sorted(
+            (
+                release
+                for release in releases
+                if not release.get("draft")
+                and not release.get("prerelease")
+                and release.get("published_at")
+                and release.get("tag_name")
+            ),
+            key=lambda release: (
+                parse_github_datetime(release["published_at"], "published_at"),
+                str(release["tag_name"]),
+            ),
+        )
+    ]
+    required = {
+        str(release["tag_name"])
+        for release in selected
+        if ordered_tags.index(str(release["tag_name"])) > 0
+    }
+    available = {
+        str(comparison.get("head_tag"))
+        for comparison in comparisons
+        if comparison.get("head_tag")
+    }
+    return required <= available
 
 
 def categorical_agreement(
@@ -746,7 +978,20 @@ def build_parser() -> argparse.ArgumentParser:
     cfr.add_argument("--start-date", required=True, type=_iso_date)
     cfr.add_argument("--end-date", required=True, type=_iso_date)
 
-    gold = subparsers.add_parser("gold-sample", help="gera templates do Luidi")
+    hydrate = subparsers.add_parser(
+        "hydrate-gold-sample",
+        help="coleta os payloads minimos dos 60 repositorios sorteados",
+    )
+    hydrate.add_argument("--dataset", required=True)
+    hydrate.add_argument("--raw-dir", required=True)
+    hydrate.add_argument("--cache-dir", default=".cache/github")
+    hydrate.add_argument("--start-date", required=True, type=_iso_date)
+    hydrate.add_argument("--end-date", required=True, type=_iso_date)
+    hydrate.add_argument("--random-state", type=int, default=DEFAULT_RANDOM_STATE)
+
+    gold = subparsers.add_parser(
+        "gold-sample", help="gera templates cegos dos dois avaliadores"
+    )
     gold.add_argument("--dataset", required=True)
     gold.add_argument("--raw-dir", required=True)
     gold.add_argument("--output-dir", required=True)
@@ -793,6 +1038,15 @@ def main(argv: list[str] | None = None) -> int:
                 start_date=args.start_date,
                 end_date=args.end_date,
             )
+        elif args.command == "hydrate-gold-sample":
+            result = hydrate_gold_sample_payloads(
+                args.dataset,
+                args.raw_dir,
+                GitHubClient.from_environment(args.cache_dir),
+                start_date=args.start_date,
+                end_date=args.end_date,
+                random_state=args.random_state,
+            )
         elif args.command == "gold-sample":
             result = prepare_gold_sample(
                 args.dataset,
@@ -837,7 +1091,7 @@ def main(argv: list[str] | None = None) -> int:
                     patch_only=not args.no_patch_rule,
                 ),
             )
-    except (ValidationError, ValueError) as exc:
+    except (ValidationError, ValueError, RuntimeError) as exc:
         print(f"Erro: {exc}", file=sys.stderr)
         return 2
     if isinstance(result, tuple):

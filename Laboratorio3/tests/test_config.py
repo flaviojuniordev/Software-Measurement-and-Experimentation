@@ -47,12 +47,36 @@ def test_command_line_values_override_file(tmp_path):
     assert config.candidate_limit == 12
 
 
+def test_smaller_candidate_override_can_be_used_for_a_partial_run(tmp_path):
+    path = write_config(tmp_path)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["collection"]["target_included"] = 300
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    config = PipelineConfig.from_file(path, candidate_limit=100)
+
+    assert config.candidate_limit == 100
+    assert config.target_included == 300
+
+
 def test_rejects_missing_dates(tmp_path):
     with pytest.raises(ConfigError, match="start_date"):
         PipelineConfig.from_file(write_config(tmp_path, start=None, end=None))
 
 
-@pytest.mark.parametrize("limit", [0, 1001])
+@pytest.mark.parametrize("limit", [0, 10001])
 def test_rejects_invalid_candidate_limit(tmp_path, limit):
     with pytest.raises(ConfigError, match="candidate_limit"):
         PipelineConfig.from_file(write_config(tmp_path), candidate_limit=limit)
+
+
+@pytest.mark.parametrize("workers", [0, 17])
+def test_rejects_invalid_workflow_run_workers(tmp_path, workers):
+    config = PipelineConfig(
+        start_date=date(2025, 1, 1),
+        end_date=date(2025, 12, 31),
+        workflow_run_workers=workers,
+    )
+
+    with pytest.raises(ConfigError, match="workflow_run_workers"):
+        config.validate()

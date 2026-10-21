@@ -1,10 +1,11 @@
 # Dicionario de dados - Sprints 1 e 2
 
-O snapshot `repositories_s02_partial.csv` registra a amostra parcial de 30
-repositorios da Sprint 2; nao representa a amostra final de 300 repositorios.
-Novas execucoes do pipeline acrescentam as quatro colunas do CFR por entrega. O
-comando `pipeline.validation cfr` permite gerar uma copia enriquecida do
-snapshot existente sem sobrescrever o artefato consolidado.
+O snapshot `repositories_s02.csv` registra a amostra final de 300 repositorios
+da Sprint 2. `repositories_s01.csv` e a saida operacional do pipeline e possui o
+mesmo conteudo na coleta consolidada. O arquivo
+`repositories_s02_partial.csv`, com 30 repositorios, e mantido apenas como
+checkpoint historico. As quatro colunas de CFR por entrega integram o dataset
+final.
 
 ## `selection_funnel.csv`
 
@@ -26,11 +27,11 @@ snapshot existente sem sobrescrever o artefato consolidado.
 | `discard_reason` | texto ou vazio | - | Motivo do descarte no funil, incluindo limites declarados do modo parcial |
 | `collection_error` | texto ou vazio | - | Mensagem registrada quando a coleta falha |
 
-## `repositories_s01.csv`
+## `repositories_s01.csv` e `repositories_s02.csv`
 
 | Coluna | Tipo | Unidade | Definicao ou formula |
 |---|---|---|---|
-| `tags_count` | inteiro | tags | Quantidade de tags retornadas pela API |
+| `tags_count` | inteiro | tags | Quantidade de tags obtidas por `git ls-remote`, com fallback para a API REST |
 | `deployment_frequency_per_week` | decimal | releases/semana | Releases principais na janela / semanas da janela |
 | `lead_time_release_median_hours` | decimal ou vazio | horas | Mediana de `release - commit mais antigo` por release |
 | `lead_time_commit_median_hours` | decimal ou vazio | horas | Mediana de `release - commit` para todos os commits |
@@ -56,3 +57,22 @@ snapshot existente sem sobrescrever o artefato consolidado.
 As demais colunas repetem os metadados documentados no funil. Valores vazios
 representam ausencia de observacoes suficientes; o pipeline nao fabrica zero nem
 uma classificacao geral quando alguma das quatro metricas esta ausente.
+
+## Planilhas da amostra-ouro
+
+Os arquivos `data/validation/{flavio,luidi}_repositories.csv` possuem as colunas
+`repository`, `project_type` e `releases_are_deliveries`. Os arquivos
+`data/validation/{flavio,luidi}_releases.csv` possuem `repository`, `release_tag`,
+`release_published_at`, `release_url`, `comparison_url` e
+`is_corrective_manual`. Os campos de julgamento sao propositalmente vazios na
+geracao e aceitam apenas as categorias descritas em `docs/metodologia_s02.md`.
+
+## Tabelas Parquet normalizadas
+
+O diretorio `data/parquet` contem uma representacao adicional e comprimida dos
+dados de coleta. Ela nao substitui os CSVs academicos. As tabelas
+`repository_metadata`, `workflows`, `releases`, `tags`, `workflow_runs`,
+`release_comparisons` e `release_commits` usam `full_name` como chave de origem.
+As tabelas `repositories` e `selection_funnel` espelham as saidas consolidadas.
+Campos ausentes permanecem nulos; listas e payloads desnecessarios da API nao
+sao replicados.

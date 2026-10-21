@@ -28,13 +28,19 @@ def parse_date(value: str | None, field_name: str) -> date:
 class PipelineConfig:
     start_date: date
     end_date: date
-    candidate_limit: int = 300
+    candidate_limit: int = 4_000
+    target_included: int | None = 300
     minimum_stars: int = 1_000
     minimum_releases: int = 5
     minimum_workflow_runs: int = 50
     cache_dir: Path = Path(".cache/github")
+    git_cache_dir: Path = Path(".cache/git")
     output_dir: Path = Path("data")
     collect_tags: bool = True
+    use_git_metadata: bool = True
+    candidate_order_seed: int = 42
+    export_parquet: bool = True
+    workflow_run_workers: int = 4
     max_retries: int = 5
     request_timeout_seconds: int = 30
 
@@ -68,7 +74,12 @@ class PipelineConfig:
             candidate_limit=int(
                 candidate_limit
                 if candidate_limit is not None
-                else collection.get("candidate_limit", 300)
+                else collection.get("candidate_limit", 4_000)
+            ),
+            target_included=(
+                int(collection["target_included"])
+                if collection.get("target_included") is not None
+                else None
             ),
             minimum_stars=int(collection.get("minimum_stars", 1_000)),
             minimum_releases=int(collection.get("minimum_releases", 5)),
@@ -76,8 +87,15 @@ class PipelineConfig:
                 collection.get("minimum_workflow_runs", 50)
             ),
             cache_dir=_resolve_path(base_dir, runtime.get("cache_dir", ".cache/github")),
+            git_cache_dir=_resolve_path(
+                base_dir, runtime.get("git_cache_dir", ".cache/git")
+            ),
             output_dir=_resolve_path(base_dir, runtime.get("output_dir", "data")),
             collect_tags=bool(collection.get("collect_tags", True)),
+            use_git_metadata=bool(collection.get("use_git_metadata", True)),
+            candidate_order_seed=int(collection.get("candidate_order_seed", 42)),
+            export_parquet=bool(runtime.get("export_parquet", True)),
+            workflow_run_workers=int(runtime.get("workflow_run_workers", 4)),
             max_retries=int(runtime.get("max_retries", 5)),
             request_timeout_seconds=int(runtime.get("request_timeout_seconds", 30)),
         )
@@ -92,8 +110,10 @@ class PipelineConfig:
     def validate(self) -> None:
         if self.start_date > self.end_date:
             raise ConfigError("start_date deve ser anterior ou igual a end_date.")
-        if self.candidate_limit < 1 or self.candidate_limit > 1_000:
-            raise ConfigError("candidate_limit deve estar entre 1 e 1000.")
+        if self.candidate_limit < 1 or self.candidate_limit > 10_000:
+            raise ConfigError("candidate_limit deve estar entre 1 e 10000.")
+        if self.target_included is not None and self.target_included < 1:
+            raise ConfigError("target_included deve ser positivo.")
         if self.minimum_stars < 0:
             raise ConfigError("minimum_stars nao pode ser negativo.")
         if self.minimum_releases < 1:
@@ -102,6 +122,8 @@ class PipelineConfig:
             raise ConfigError("minimum_workflow_runs deve ser positivo.")
         if self.max_retries < 0:
             raise ConfigError("max_retries nao pode ser negativo.")
+        if not 1 <= self.workflow_run_workers <= 16:
+            raise ConfigError("workflow_run_workers deve estar entre 1 e 16.")
         if self.request_timeout_seconds < 1:
             raise ConfigError("request_timeout_seconds deve ser positivo.")
 
