@@ -1,0 +1,89 @@
+factor,factor_label,group,metric,metric_label,n,median,q1,q3
+stars_quartile,Popularidade,Q1,deployment_frequency_per_week,Deployment frequency,75,0.3452054794520547,0.1917808219178082,0.6712328767123287
+stars_quartile,Popularidade,Q2,deployment_frequency_per_week,Deployment frequency,75,0.3260273972602739,0.18219178082191775,0.8150684931506849
+stars_quartile,Popularidade,Q3,deployment_frequency_per_week,Deployment frequency,75,0.4410958904109588,0.2397260273972602,0.8821917808219177
+stars_quartile,Popularidade,Q4,deployment_frequency_per_week,Deployment frequency,75,0.7671232876712328,0.2684931506849315,1.3904109589041096
+stars_quartile,Popularidade,Q1,lead_time_release_median_hours,Lead time,75,323.50444444444446,129.26833333333332,1013.7496527777778
+stars_quartile,Popularidade,Q2,lead_time_release_median_hours,Lead time,75,264.6633333333333,53.291875,1167.1712499999999
+stars_quartile,Popularidade,Q3,lead_time_release_median_hours,Lead time,75,255.5752777777778,73.06736111111111,1006.2577083333334
+stars_quartile,Popularidade,Q4,lead_time_release_median_hours,Lead time,75,190.5375,59.60111111111111,833.1314583333333
+stars_quartile,Popularidade,Q1,ci_change_failure_rate,CFR de CI,75,0.0718894009216589,0.029334873340814,0.13463329716608324
+stars_quartile,Popularidade,Q2,ci_change_failure_rate,CFR de CI,75,0.063063063063063,0.03585214671087565,0.11578488578951104
+stars_quartile,Popularidade,Q3,ci_change_failure_rate,CFR de CI,75,0.0732484076433121,0.03202761696877665,0.14537182317044
+stars_quartile,Popularidade,Q4,ci_change_failure_rate,CFR de CI,75,0.053231939163498,0.021735295846970898,0.12150624707940515
+stars_quartile,Popularidade,Q1,median_recovery_hours,Recuperacao,72,3.6983333333333333,1.0265972222222222,15.528819444444443
+stars_quartile,Popularidade,Q2,median_recovery_hours,Recuperacao,70,3.6011805555555556,1.2818402777777778,23.160208333333333
+stars_quartile,Popularidade,Q3,median_recovery_hours,Recuperacao,72,3.4281250000000005,1.0013194444444444,7.659236111111111
+stars_quartile,Popularidade,Q4,median_recovery_hours,Recuperacao,67,3.0575,1.0180555555555555,7.299444444444445
+contributors_quartile,Contribuidores,Q1,deployment_frequency_per_week,Deployment frequency,75,0.3835616438356164,0.1917808219178082,0.7863013698630137
+contributors_quartile,Contribuidores,Q2,deployment_frequency_per_week,Deployment frequency,76,0.4602739726027397,0.2636986301369863,1.0547945205479452
+contributors_quartile,Contribuidores,Q3,deployment_frequency_per_week,Deployment frequency,74,0.3835616438356164,0.1917808219178082,0.7527397260273972
+contributors_quartile,Contribuidores,Q4,deployment_frequency_per_week,Deployment frequency,75,0.4794520547945205,0.2684931506849315,1.294520547945205
+contributors_quartile,Contribuidores,Q1,lead_time_release_median_hours,Lead time,75,143.1773611111111,21.967430555555556,479.0748611111111
+contributors_quartile,Contribuidores,Q2,lead_time_release_median_hours,Lead time,76,256.57624999999996,48.788125,724.7413888888889
+contributors_quartile,Contribuidores,Q3,lead_time_release_median_hours,Lead time,74,305.6041666666667,137.53868055555557,1335.7599305555555
+contributors_quartile,Contribuidores,Q4,lead_time_release_median_hours,Lead time,75,396.6725,104.61909722222222,2578.2825000000003
+contributors_quartile,Contribuidores,Q1,ci_change_failure_rate,CFR de CI,75,0.0588235294117647,0.0196726823001092,0.12554765941137389
+contributors_quartile,Contribuidores,Q2,ci_change_failure_rate,CFR de CI,76,0.05762852404643445,0.03374385559644358,0.10316339282571192
+contributors_quartile,Contribuidores,Q3,ci_change_failure_rate,CFR de CI,74,0.07458634608336426,0.0269496476261127,0.17882838775597082
+contributors_quartile,Contribuidores,Q4,ci_change_failure_rate,CFR de CI,75,0.0835093277015135,0.03914326277868465,0.13927942170777904
+contributors_quartile,Contribuidores,Q1,median_recovery_hours,Recuperacao,68,1.6508333333333334,0.6197916666666667,18.357118055555556
+contributors_quartile,Contribuidores,Q2,median_recovery_hours,Recuperacao,69,2.748611111111111,0.8402777777777778,9.829444444444444
+contributors_quartile,Contribuidores,Q3,median_recovery_hours,Recuperacao,70,4.5754166666666665,1.4621875,11.026631944444446
+contributors_quartile,Contribuidores,Q4,median_recovery_hours,Recuperacao,74,3.6534722222222222,1.7651041666666667,7.083715277777777
+age_quartile,Idade,Q1,deployment_frequency_per_week,Deployment frequency,76,0.7767123287671233,0.3404109589041095,1.845890410958904
+age_quartile,Idade,Q2,deployment_frequency_per_week,Deployment frequency,74,0.4506849315068493,0.2301369863013698,1.3328767123287668
+age_quartile,Idade,Q3,deployment_frequency_per_week,Deployment frequency,75,0.3835616438356164,0.1917808219178082,0.7095890410958904
+age_quartile,Idade,Q4,deployment_frequency_per_week,Deployment frequency,75,0.2876712328767123,0.1726027397260273,0.5465753424657533
+age_quartile,Idade,Q1,lead_time_release_median_hours,Lead time,76,86.73347222222222,14.065277777777778,205.0236805555556
+age_quartile,Idade,Q2,lead_time_release_median_hours,Lead time,74,305.32534722222226,82.56243055555555,915.7515972222222
+age_quartile,Idade,Q3,lead_time_release_median_hours,Lead time,75,362.25708333333336,159.485,1264.0513194444443
+age_quartile,Idade,Q4,lead_time_release_median_hours,Lead time,75,865.6097222222222,198.9578472222222,3271.7891666666665
+age_quartile,Idade,Q1,ci_change_failure_rate,CFR de CI,76,0.0639663983591824,0.031081550710876926,0.13391234292891335
+age_quartile,Idade,Q2,ci_change_failure_rate,CFR de CI,74,0.06945248664993885,0.0352250371139246,0.13999414020882162
+age_quartile,Idade,Q3,ci_change_failure_rate,CFR de CI,75,0.0611597986201752,0.022798112579925797,0.10966041585697625
+age_quartile,Idade,Q4,ci_change_failure_rate,CFR de CI,75,0.0627802690582959,0.0228165496760259,0.12250076562978515
+age_quartile,Idade,Q1,median_recovery_hours,Recuperacao,74,1.8638888888888887,0.7913888888888889,7.642569444444445
+age_quartile,Idade,Q2,median_recovery_hours,Recuperacao,70,4.159375,1.2497222222222222,17.577465277777776
+age_quartile,Idade,Q3,median_recovery_hours,Recuperacao,68,3.310416666666667,1.2134375000000002,7.762743055555555
+age_quartile,Idade,Q4,median_recovery_hours,Recuperacao,69,5.311805555555556,1.6055555555555556,16.212777777777777
+language_group,Linguagem,Go,deployment_frequency_per_week,Deployment frequency,42,0.4890410958904109,0.2301369863013698,0.8006849315068493
+language_group,Linguagem,JavaScript,deployment_frequency_per_week,Deployment frequency,29,0.3452054794520547,0.210958904109589,0.5561643835616438
+language_group,Linguagem,Outras,deployment_frequency_per_week,Deployment frequency,67,0.2876712328767123,0.1438356164383561,0.4890410958904109
+language_group,Linguagem,Python,deployment_frequency_per_week,Deployment frequency,53,0.3260273972602739,0.1917808219178082,0.6904109589041095
+language_group,Linguagem,Rust,deployment_frequency_per_week,Deployment frequency,23,0.7095890410958904,0.2684931506849315,1.5150684931506846
+language_group,Linguagem,TypeScript,deployment_frequency_per_week,Deployment frequency,86,0.7863013698630137,0.2972602739726027,1.7931506849315066
+language_group,Linguagem,Go,lead_time_release_median_hours,Lead time,42,375.30131944444446,96.08138888888888,1154.997847222222
+language_group,Linguagem,JavaScript,lead_time_release_median_hours,Lead time,29,246.79847222222224,60.70027777777778,1774.586388888889
+language_group,Linguagem,Outras,lead_time_release_median_hours,Lead time,67,748.5727777777778,304.1333333333333,2371.6300694444444
+language_group,Linguagem,Python,lead_time_release_median_hours,Lead time,53,228.4272222222222,76.06444444444445,583.6819444444445
+language_group,Linguagem,Rust,lead_time_release_median_hours,Lead time,23,166.59930555555556,17.05611111111111,204.59625
+language_group,Linguagem,TypeScript,lead_time_release_median_hours,Lead time,86,165.52958333333333,34.66118055555555,343.9349652777778
+language_group,Linguagem,Go,ci_change_failure_rate,CFR de CI,42,0.07547456155272886,0.03343495661983932,0.1225068695835975
+language_group,Linguagem,JavaScript,ci_change_failure_rate,CFR de CI,29,0.0555555555555555,0.0256776034236804,0.1019677996422182
+language_group,Linguagem,Outras,ci_change_failure_rate,CFR de CI,67,0.0627802690582959,0.03319538136820755,0.12075018527434125
+language_group,Linguagem,Python,ci_change_failure_rate,CFR de CI,53,0.053231939163498,0.0203045685279187,0.1170212765957446
+language_group,Linguagem,Rust,ci_change_failure_rate,CFR de CI,23,0.0877551020408163,0.0397414809730749,0.16659256085434565
+language_group,Linguagem,TypeScript,ci_change_failure_rate,CFR de CI,86,0.07663504782104905,0.03143744894386735,0.13613418602549032
+language_group,Linguagem,Go,median_recovery_hours,Recuperacao,41,3.3825,1.3781944444444445,9.829444444444444
+language_group,Linguagem,JavaScript,median_recovery_hours,Recuperacao,25,2.317638888888889,0.6625000000000001,5.277222222222223
+language_group,Linguagem,Outras,median_recovery_hours,Recuperacao,64,5.2086805555555555,1.7591666666666668,16.570208333333333
+language_group,Linguagem,Python,median_recovery_hours,Recuperacao,47,3.0575,0.6711111111111111,42.44430555555556
+language_group,Linguagem,Rust,median_recovery_hours,Recuperacao,22,3.647569444444444,1.3667708333333333,7.664236111111111
+language_group,Linguagem,TypeScript,median_recovery_hours,Recuperacao,82,2.688263888888889,1.1424305555555558,6.994409722222223
+project_type,Tipo de projeto,aplicacao/servico,deployment_frequency_per_week,Deployment frequency,24,0.4410958904109588,0.2253424657534246,0.7383561643835617
+project_type,Tipo de projeto,biblioteca/framework,deployment_frequency_per_week,Deployment frequency,19,0.421917808219178,0.26849315068493146,0.9301369863013698
+project_type,Tipo de projeto,ferramenta CLI,deployment_frequency_per_week,Deployment frequency,14,0.9397260273972602,0.5993150684931507,1.5630136986301366
+project_type,Tipo de projeto,outro,deployment_frequency_per_week,Deployment frequency,3,0.210958904109589,0.2013698630136986,0.5465753424657533
+project_type,Tipo de projeto,aplicacao/servico,lead_time_release_median_hours,Lead time,24,226.01680555555555,134.8647222222222,886.6684722222221
+project_type,Tipo de projeto,biblioteca/framework,lead_time_release_median_hours,Lead time,19,202.41972222222225,30.303124999999998,810.8490277777778
+project_type,Tipo de projeto,ferramenta CLI,lead_time_release_median_hours,Lead time,14,84.95708333333333,13.799027777777777,149.32881944444443
+project_type,Tipo de projeto,outro,lead_time_release_median_hours,Lead time,3,228.68805555555556,118.10222222222222,382.4541666666667
+project_type,Tipo de projeto,aplicacao/servico,ci_change_failure_rate,CFR de CI,24,0.0695950632675448,0.040828544061302624,0.1820291777188329
+project_type,Tipo de projeto,biblioteca/framework,ci_change_failure_rate,CFR de CI,19,0.0469378632096557,0.021139070328941148,0.12010834033809654
+project_type,Tipo de projeto,ferramenta CLI,ci_change_failure_rate,CFR de CI,14,0.11688891198266596,0.031243127710307447,0.18464449219844897
+project_type,Tipo de projeto,outro,ci_change_failure_rate,CFR de CI,3,0.0451650260567458,0.04313045823385235,0.12654290906797686
+project_type,Tipo de projeto,aplicacao/servico,median_recovery_hours,Recuperacao,23,5.079166666666667,2.7981944444444444,10.80013888888889
+project_type,Tipo de projeto,biblioteca/framework,median_recovery_hours,Recuperacao,19,2.4830555555555556,0.3397222222222222,6.350416666666667
+project_type,Tipo de projeto,ferramenta CLI,median_recovery_hours,Recuperacao,14,2.724236111111111,1.3520138888888888,4.431597222222222
+project_type,Tipo de projeto,outro,median_recovery_hours,Recuperacao,3,7.689722222222223,4.1634722222222225,9.430416666666666

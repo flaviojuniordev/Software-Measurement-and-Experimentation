@@ -1,0 +1,61 @@
+repository,project_type_consensus,releases_are_deliveries_consensus
+AlistGo/alist,aplicacao/servico,sim
+Chocobozzz/PeerTube,aplicacao/servico,sim
+ChromeDevTools/chrome-devtools-mcp,ferramenta CLI,sim
+Devolutions/UniGetUI,aplicacao/servico,sim
+DuarteSantos8/openGym,aplicacao/servico,sim
+HKUDS/RAG-Anything,biblioteca/framework,sim
+Intervention/image,biblioteca/framework,sim
+PHP-CS-Fixer/PHP-CS-Fixer,ferramenta CLI,sim
+QL-Win/QuickLook,aplicacao/servico,sim
+RSSNext/Folo,aplicacao/servico,sim
+SagerNet/sing-box,ferramenta CLI,sim
+Significant-Gravitas/AutoGPT,aplicacao/servico,sim
+THU-MAIC/OpenMAIC,aplicacao/servico,sim
+Tencent/WeKnora,aplicacao/servico,sim
+ToolJet/ToolJet,aplicacao/servico,sim
+ZhuLinsen/daily_stock_analysis,aplicacao/servico,sim
+agentscope-ai/agentscope,biblioteca/framework,sim
+apache/pulsar,aplicacao/servico,sim
+bitwarden/server,aplicacao/servico,sim
+browseros-ai/BrowserOS,aplicacao/servico,sim
+budtmo/docker-android,outro,sim
+can1357/oh-my-pi,ferramenta CLI,sim
+crimx/ext-saladict,aplicacao/servico,sim
+danielgatis/rembg,ferramenta CLI,sim
+discordjs/discord.js,biblioteca/framework,sim
+dragonflydb/dragonfly,aplicacao/servico,sim
+dream-num/univer,biblioteca/framework,sim
+earendil-works/pi,ferramenta CLI,sim
+electron-userland/electron-builder,ferramenta CLI,sim
+element-plus/element-plus,biblioteca/framework,sim
+explosion/spaCy,biblioteca/framework,sim
+filamentphp/filament,biblioteca/framework,sim
+ggml-org/llama.cpp,ferramenta CLI,sim
+godotengine/godot,aplicacao/servico,sim
+golangci/golangci-lint,ferramenta CLI,sim
+gpujs/gpu.js,biblioteca/framework,sim
+honojs/hono,biblioteca/framework,sim
+huggingface/lerobot,biblioteca/framework,sim
+locustio/locust,ferramenta CLI,sim
+luongnv89/claude-howto,outro,incerto
+matomo-org/matomo,aplicacao/servico,sim
+microg/GmsCore,aplicacao/servico,sim
+mobxjs/mobx,biblioteca/framework,sim
+modelscope/FunASR,biblioteca/framework,sim
+modular/modular,biblioteca/framework,sim
+mvanhorn/last30days-skill,outro,sim
+nextai-translator/nextai-translator,aplicacao/servico,sim
+nginx/nginx,aplicacao/servico,sim
+postcss/autoprefixer,biblioteca/framework,sim
+prometheus/node_exporter,aplicacao/servico,sim
+rtk-ai/rtk,ferramenta CLI,sim
+schollz/croc,ferramenta CLI,sim
+semaphoreui/semaphore,aplicacao/servico,sim
+tinacms/tinacms,biblioteca/framework,sim
+urfave/cli,biblioteca/framework,sim
+usebruno/bruno,aplicacao/servico,sim
+vercel/turborepo,ferramenta CLI,sim
+vuejs/core,biblioteca/framework,sim
+web-infra-dev/midscene,biblioteca/framework,sim
+yt-dlp/yt-dlp,ferramenta CLI,sim

@@ -1,0 +1,113 @@
+{
+  "evaluations": [
+    {
+      "confusion_matrix": {
+        "false_negative": 2,
+        "false_positive": 145,
+        "true_negative": 17,
+        "true_positive": 136
+      },
+      "evaluated_at": "2026-10-21T21:40:56.802686+00:00",
+      "f1": 0.6491646778042959,
+      "heuristic": {
+        "keywords_case_insensitive": [
+          "fix",
+          "hotfix",
+          "revert"
+        ],
+        "patch_only_semver": true,
+        "version": "v1"
+      },
+      "observations": 300,
+      "precision": 0.48398576512455516,
+      "recall": 0.9855072463768116,
+      "refinement_required": true
+    },
+    {
+      "confusion_matrix": {
+        "false_negative": 6,
+        "false_positive": 137,
+        "true_negative": 25,
+        "true_positive": 132
+      },
+      "evaluated_at": "2026-10-21T21:41:06.211234+00:00",
+      "f1": 0.6486486486486487,
+      "heuristic": {
+        "keywords_case_insensitive": [
+          "fix",
+          "hotfix",
+          "revert"
+        ],
+        "patch_only_semver": false,
+        "version": "v2_no_patch"
+      },
+      "observations": 300,
+      "precision": 0.49070631970260226,
+      "recall": 0.9565217391304348,
+      "refinement_required": true
+    },
+    {
+      "confusion_matrix": {
+        "false_negative": 48,
+        "false_positive": 55,
+        "true_negative": 107,
+        "true_positive": 90
+      },
+      "evaluated_at": "2026-10-21T21:41:10.841968+00:00",
+      "f1": 0.6360424028268551,
+      "heuristic": {
+        "keywords_case_insensitive": [],
+        "patch_only_semver": true,
+        "version": "v3_patch_only"
+      },
+      "observations": 300,
+      "precision": 0.6206896551724138,
+      "recall": 0.6521739130434783,
+      "refinement_required": true
+    },
+    {
+      "confusion_matrix": {
+        "false_negative": 109,
+        "false_positive": 59,
+        "true_negative": 103,
+        "true_positive": 29
+      },
+      "evaluated_at": "2026-10-21T21:41:15.716883+00:00",
+      "f1": 0.25663716814159293,
+      "heuristic": {
+        "keywords_case_insensitive": [
+          "hotfix",
+          "revert"
+        ],
+        "patch_only_semver": false,
+        "version": "v4_strong_keywords"
+      },
+      "observations": 300,
+      "precision": 0.32954545454545453,
+      "recall": 0.21014492753623187,
+      "refinement_required": true
+    },
+    {
+      "confusion_matrix": {
+        "false_negative": 36,
+        "false_positive": 93,
+        "true_negative": 69,
+        "true_positive": 102
+      },
+      "evaluated_at": "2026-10-21T21:41:20.854998+00:00",
+      "f1": 0.6126126126126126,
+      "heuristic": {
+        "keywords_case_insensitive": [
+          "hotfix",
+          "revert"
+        ],
+        "patch_only_semver": true,
+        "version": "v5_patch_strong"
+      },
+      "observations": 300,
+      "precision": 0.5230769230769231,
+      "recall": 0.7391304347826086,
+      "refinement_required": true
+    }
+  ]
+}

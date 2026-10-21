@@ -85,11 +85,19 @@ sao sorteadas com uma semente estavel derivada do nome do repositorio. O sistema
 gera arquivos separados para Flavio e Luidi, sem mostrar a previsao automatica,
 com links diretos para a release e para a comparacao de commits.
 
-Cada avaliador deve registrar, de forma independente: tipo do projeto
+O protocolo planejado solicitava que cada avaliador registrasse, de forma
+independente: tipo do projeto
 (`biblioteca/framework`, `aplicacao/servico`, `ferramenta CLI` ou `outro`), se as
 releases representam entregas reais (`sim`, `nao` ou `incerto`) e se cada uma das
 300 releases sorteadas e corretiva (`sim` ou `nao`). Nenhum julgamento humano e
 preenchido automaticamente.
+
+Na execucao, a planilha atribuida a Flavio foi produzida com apoio da
+pre-classificacao por IA e coincide com ela; a planilha de Luidi foi preenchida
+de forma independente. Por esse motivo, o relatorio nao trata as duas planilhas
+como duas avaliacoes humanas cegas. Nos casos divergentes, o consenso adotou o
+julgamento independente de Luidi. O protocolo executado, os kappas e todas as
+versoes da heuristica estao documentados em `docs/protocolo_consenso_s02.md`.
 
 Depois da rotulagem, o script calcula concordancia observada e kappa de Fleiss
 nas tres dimensoes; como o grupo possui dois integrantes, tambem calcula kappa de

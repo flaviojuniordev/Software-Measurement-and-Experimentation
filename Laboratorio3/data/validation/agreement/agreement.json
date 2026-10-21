@@ -1,0 +1,22 @@
+{
+  "corrective_releases": {
+    "cohen_kappa": 0.08399800598205392,
+    "fleiss_kappa": -0.16299001832830082,
+    "items": 300,
+    "observed_agreement": 0.51
+  },
+  "majority_resolution": false,
+  "project_type": {
+    "cohen_kappa": 0.8270181219110379,
+    "fleiss_kappa": 0.8266969259335671,
+    "items": 60,
+    "observed_agreement": 0.8833333333333333
+  },
+  "raters": 2,
+  "releases_are_deliveries": {
+    "cohen_kappa": 0.6590909090909087,
+    "fleiss_kappa": 0.6581196581196576,
+    "items": 60,
+    "observed_agreement": 0.9833333333333333
+  }
+}

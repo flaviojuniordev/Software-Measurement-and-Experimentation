@@ -1,0 +1,210 @@
+{
+  "sample_size": 300,
+  "metrics": {
+    "deployment_frequency_per_week": {
+      "n": 300,
+      "median": 0.421917808219178,
+      "q1": 0.210958904109589,
+      "q3": 0.9636986301369863,
+      "iqr": 0.7527397260273974
+    },
+    "lead_time_release_median_hours": {
+      "n": 300,
+      "median": 260.11930555555557,
+      "q1": 75.91097222222223,
+      "q3": 998.0617013888889,
+      "iqr": 922.1507291666667
+    },
+    "lead_time_commit_median_hours": {
+      "n": 300,
+      "median": 275.77791666666667,
+      "q1": 69.77781250000001,
+      "q3": 1039.1131944444444,
+      "iqr": 969.3353819444444
+    },
+    "ci_change_failure_rate": {
+      "n": 300,
+      "median": 0.06301578940259595,
+      "q1": 0.029608134054808825,
+      "q3": 0.12800059374524878,
+      "iqr": 0.09839245969043994
+    },
+    "release_change_failure_rate": {
+      "n": 299,
+      "median": 0.4347826086956521,
+      "q1": 0.2,
+      "q3": 0.6871998487426735,
+      "iqr": 0.48719984874267347
+    },
+    "median_recovery_hours": {
+      "n": 281,
+      "median": 3.5365277777777777,
+      "q1": 1.048888888888889,
+      "q3": 11.147777777777778,
+      "iqr": 10.098888888888888
+    },
+    "censored_episodes_proportion": {
+      "n": 282,
+      "median": 0.0,
+      "q1": 0.0,
+      "q3": 0.00303975672936135,
+      "iqr": 0.00303975672936135
+    }
+  },
+  "overall_dora": {
+    "Medium": 135,
+    "High": 112,
+    "Ausente": 19,
+    "Elite": 18,
+    "Low": 16
+  },
+  "recovery_censored_repositories": 19,
+  "rq05": [
+    {
+      "cfr_variant": "ci_change_failure_rate",
+      "label": "CFR de CI",
+      "n": 300,
+      "spearman_rho": 0.13142511379457772,
+      "p_value": 0.022802311344546196
+    },
+    {
+      "cfr_variant": "release_change_failure_rate",
+      "label": "CFR por entrega",
+      "n": 299,
+      "spearman_rho": 0.6622119231596081,
+      "p_value": 4.149246115491993e-39
+    }
+  ],
+  "rq06_significant_after_holm": [
+    {
+      "factor": "age_quartile",
+      "factor_label": "Idade",
+      "metric": "lead_time_release_median_hours",
+      "metric_label": "Lead time",
+      "test": "Kruskal-Wallis",
+      "groups": 4,
+      "n": 300,
+      "statistic": 58.766496642612196,
+      "p_value_raw": 1.0782824039071112e-12,
+      "effect_name": "epsilon_squared",
+      "effect_size": 0.1965434670321478,
+      "effect_magnitude": "grande",
+      "p_value_holm": 2.1565648078142225e-11,
+      "significant_holm": true
+    },
+    {
+      "factor": "age_quartile",
+      "factor_label": "Idade",
+      "metric": "deployment_frequency_per_week",
+      "metric_label": "Deployment frequency",
+      "test": "Kruskal-Wallis",
+      "groups": 4,
+      "n": 300,
+      "statistic": 29.079806720657594,
+      "p_value_raw": 2.1546010434274596e-06,
+      "effect_name": "epsilon_squared",
+      "effect_size": 0.09725687866440667,
+      "effect_magnitude": "medio",
+      "p_value_holm": 4.003806988397723e-05,
+      "significant_holm": true
+    },
+    {
+      "factor": "language_group",
+      "factor_label": "Linguagem",
+      "metric": "lead_time_release_median_hours",
+      "metric_label": "Lead time",
+      "test": "Kruskal-Wallis",
+      "groups": 6,
+      "n": 300,
+      "statistic": 34.266341767926974,
+      "p_value_raw": 2.1072668359988016e-06,
+      "effect_name": "epsilon_squared",
+      "effect_size": 0.11460314972550828,
+      "effect_magnitude": "medio",
+      "p_value_holm": 4.003806988397723e-05,
+      "significant_holm": true
+    },
+    {
+      "factor": "language_group",
+      "factor_label": "Linguagem",
+      "metric": "deployment_frequency_per_week",
+      "metric_label": "Deployment frequency",
+      "test": "Kruskal-Wallis",
+      "groups": 6,
+      "n": 300,
+      "statistic": 28.669940005190725,
+      "p_value_raw": 2.691337914794767e-05,
+      "effect_name": "epsilon_squared",
+      "effect_size": 0.09588608697388203,
+      "effect_magnitude": "medio",
+      "p_value_holm": 0.00045752744551511037,
+      "significant_holm": true
+    },
+    {
+      "factor": "contributors_quartile",
+      "factor_label": "Contribuidores",
+      "metric": "lead_time_release_median_hours",
+      "metric_label": "Lead time",
+      "test": "Kruskal-Wallis",
+      "groups": 4,
+      "n": 300,
+      "statistic": 19.07352606090967,
+      "p_value_raw": 0.00026399322981819054,
+      "effect_name": "epsilon_squared",
+      "effect_size": 0.06379105705989857,
+      "effect_magnitude": "medio",
+      "p_value_holm": 0.004223891677091049,
+      "significant_holm": true
+    }
+  ],
+  "rq07": [
+    {
+      "scenario_a": "C1_ref_LT_release_CFR_CI",
+      "scenario_b": "C2_LT_commit_CFR_release",
+      "n": 280,
+      "changed_count": 136,
+      "changed_proportion": 0.4857142857142857,
+      "weighted_cohen_kappa": 0.3050325231085246
+    },
+    {
+      "scenario_a": "C1_ref_LT_release_CFR_CI",
+      "scenario_b": "C3_LT_commit_CFR_CI",
+      "n": 281,
+      "changed_count": 44,
+      "changed_proportion": 0.15658362989323843,
+      "weighted_cohen_kappa": 0.7845092024539877
+    },
+    {
+      "scenario_a": "C1_ref_LT_release_CFR_CI",
+      "scenario_b": "C4_LT_release_CFR_release",
+      "n": 280,
+      "changed_count": 111,
+      "changed_proportion": 0.3964285714285714,
+      "weighted_cohen_kappa": 0.4457719604836121
+    },
+    {
+      "scenario_a": "C2_LT_commit_CFR_release",
+      "scenario_b": "C3_LT_commit_CFR_CI",
+      "n": 280,
+      "changed_count": 124,
+      "changed_proportion": 0.44285714285714284,
+      "weighted_cohen_kappa": 0.403715876316319
+    },
+    {
+      "scenario_a": "C2_LT_commit_CFR_release",
+      "scenario_b": "C4_LT_release_CFR_release",
+      "n": 280,
+      "changed_count": 48,
+      "changed_proportion": 0.17142857142857143,
+      "weighted_cohen_kappa": 0.7166947723440135
+    },
+    {
+      "scenario_a": "C3_LT_commit_CFR_CI",
+      "scenario_b": "C4_LT_release_CFR_release",
+      "n": 280,
+      "changed_count": 124,
+      "changed_proportion": 0.44285714285714284,
+      "weighted_cohen_kappa": 0.3802070624324606
+    }
+  ]
+}

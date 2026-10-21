@@ -234,11 +234,12 @@ python -m pipeline.validation gold-sample \
   --allow-partial
 ```
 
-Os templates dos dois avaliadores sao gerados com todos os julgamentos humanos
-vazios, nunca incluem a previsao da heuristica e trazem links para a release e
-para a comparacao de commits. Flavio ja preencheu suas planilhas com julgamentos
-humanos independentes, documentados em `docs/rotulacao_flavio.md`. Depois que
-Luidi preencher as suas, a concordancia e as pendencias sao geradas com:
+Os templates dos dois avaliadores sao gerados com todos os julgamentos vazios e
+trazem links para a release e para a comparacao de commits. Na execucao deste
+estudo, a planilha de Flavio foi apoiada pela pre-classificacao de IA e a de
+Luidi foi independente. Essa diferenca e a regra de consenso estao documentadas
+em `docs/protocolo_consenso_s02.md`. A concordancia e as pendencias sao geradas
+com:
 
 ```bash
 python -m pipeline.validation agreement \
@@ -322,9 +323,22 @@ python3 -m pytest
 chamada real a API e feita. O mesmo comando e executado por
 `.github/workflows/lab03-tests.yml` em pushes e pull requests que alterem o Lab03.
 
-## Escopo ainda pendente
+## Analise estatistica e relatorio
 
-A amostra final de 300 repositorios, as metricas, o dicionario e a metodologia
-estao consolidados. Kappas, consenso e precisao/recall/F1 so podem ser produzidos
-depois que Flavio e Luidi preencherem independentemente as planilhas da
-amostra-ouro. Permanecem para a Sprint 3 as analises estatisticas de RQ01 a RQ07.
+Com o consenso consolidado, execute todas as analises de RQ01 a RQ07 e gere as
+tabelas e figuras com:
+
+```bash
+python -m analysis.analyze_lab03
+```
+
+Os resultados ficam em `analysis/results/`. O artigo final e regenerado com:
+
+```bash
+python report/generate_report.py
+```
+
+O PDF e salvo em `output/pdf/Relatorio_Final_LAB03_Flavio_Luidi.pdf`. A unica
+etapa externa ainda pendente e a replicacao cruzada: ela depende do pipeline de
+outro grupo sorteado pelo professor e esta registrada em
+`docs/replicacao_cruzada.md`.

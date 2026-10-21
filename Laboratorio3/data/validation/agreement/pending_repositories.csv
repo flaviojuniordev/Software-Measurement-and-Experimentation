@@ -1,0 +1,9 @@
+repository,flavio_project_type,luidi_project_type,consensus_project_type,flavio_releases_are_deliveries,luidi_releases_are_deliveries,consensus_releases_are_deliveries
+ChromeDevTools/chrome-devtools-mcp,aplicacao/servico,ferramenta CLI,ferramenta CLI,sim,sim,sim
+SagerNet/sing-box,aplicacao/servico,ferramenta CLI,ferramenta CLI,sim,sim,sim
+budtmo/docker-android,aplicacao/servico,outro,outro,sim,sim,sim
+ggml-org/llama.cpp,biblioteca/framework,ferramenta CLI,ferramenta CLI,sim,sim,sim
+godotengine/godot,biblioteca/framework,aplicacao/servico,aplicacao/servico,sim,sim,sim
+modular/modular,outro,biblioteca/framework,biblioteca/framework,sim,sim,sim
+mvanhorn/last30days-skill,outro,outro,outro,incerto,sim,sim
+tinacms/tinacms,aplicacao/servico,biblioteca/framework,biblioteca/framework,sim,sim,sim

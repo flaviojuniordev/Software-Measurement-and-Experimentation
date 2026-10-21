@@ -1,0 +1,21 @@
+factor,factor_label,metric,metric_label,test,groups,n,statistic,p_value_raw,effect_name,effect_size,effect_magnitude,p_value_holm,significant_holm
+stars_quartile,Popularidade,deployment_frequency_per_week,Deployment frequency,Kruskal-Wallis,4,300,10.44478987410175,0.015140134554816337,epsilon_squared,0.03493240760569147,pequeno,0.22710201832224505,False
+stars_quartile,Popularidade,lead_time_release_median_hours,Lead time,Kruskal-Wallis,4,300,1.8818002214840135,0.5972980572069275,epsilon_squared,0.006293646225699042,desprezivel,1.0,False
+stars_quartile,Popularidade,ci_change_failure_rate,CFR de CI,Kruskal-Wallis,4,300,1.9775890987421623,0.577071176702177,epsilon_squared,0.006614010363686161,desprezivel,1.0,False
+stars_quartile,Popularidade,median_recovery_hours,Recuperacao,Kruskal-Wallis,4,281,2.669330248686182,0.44546448340836375,epsilon_squared,0.009533322316736363,desprezivel,1.0,False
+contributors_quartile,Contribuidores,deployment_frequency_per_week,Deployment frequency,Kruskal-Wallis,4,300,5.85538730873656,0.11886187816253019,epsilon_squared,0.01958323514627612,pequeno,1.0,False
+contributors_quartile,Contribuidores,lead_time_release_median_hours,Lead time,Kruskal-Wallis,4,300,19.07352606090967,0.00026399322981819054,epsilon_squared,0.06379105705989857,medio,0.004223891677091049,True
+contributors_quartile,Contribuidores,ci_change_failure_rate,CFR de CI,Kruskal-Wallis,4,300,3.78008898806357,0.28621062551190757,epsilon_squared,0.012642438087169132,pequeno,1.0,False
+contributors_quartile,Contribuidores,median_recovery_hours,Recuperacao,Kruskal-Wallis,4,281,2.1738983765631166,0.5371078587598037,epsilon_squared,0.007763922773439702,desprezivel,1.0,False
+age_quartile,Idade,deployment_frequency_per_week,Deployment frequency,Kruskal-Wallis,4,300,29.079806720657594,2.1546010434274596e-06,epsilon_squared,0.09725687866440667,medio,4.003806988397723e-05,True
+age_quartile,Idade,lead_time_release_median_hours,Lead time,Kruskal-Wallis,4,300,58.766496642612196,1.0782824039071112e-12,epsilon_squared,0.1965434670321478,grande,2.1565648078142225e-11,True
+age_quartile,Idade,ci_change_failure_rate,CFR de CI,Kruskal-Wallis,4,300,2.3377693441311993,0.5053239424407816,epsilon_squared,0.007818626569000666,desprezivel,1.0,False
+age_quartile,Idade,median_recovery_hours,Recuperacao,Kruskal-Wallis,4,281,7.762756722584063,0.051177907787382335,epsilon_squared,0.02772413115208594,pequeno,0.614134893448588,False
+language_group,Linguagem,deployment_frequency_per_week,Deployment frequency,Kruskal-Wallis,6,300,28.669940005190725,2.691337914794767e-05,epsilon_squared,0.09588608697388203,medio,0.00045752744551511037,True
+language_group,Linguagem,lead_time_release_median_hours,Lead time,Kruskal-Wallis,6,300,34.266341767926974,2.1072668359988016e-06,epsilon_squared,0.11460314972550828,medio,4.003806988397723e-05,True
+language_group,Linguagem,ci_change_failure_rate,CFR de CI,Kruskal-Wallis,6,300,5.066387198384009,0.40783209311512797,epsilon_squared,0.01694443879058197,pequeno,1.0,False
+language_group,Linguagem,median_recovery_hours,Recuperacao,Kruskal-Wallis,6,281,5.41145030503804,0.3677533957690364,epsilon_squared,0.019326608232278712,pequeno,1.0,False
+project_type,Tipo de projeto,deployment_frequency_per_week,Deployment frequency,Kruskal-Wallis,4,60,8.302266595907435,0.04016085869416745,epsilon_squared,0.14071638298148195,grande,0.5220911630241769,False
+project_type,Tipo de projeto,lead_time_release_median_hours,Lead time,Kruskal-Wallis,4,60,8.74539216894695,0.0328747508079537,epsilon_squared,0.14822698591435507,grande,0.46024651131135175,False
+project_type,Tipo de projeto,ci_change_failure_rate,CFR de CI,Kruskal-Wallis,4,60,1.5742234685073129,0.6652484944244743,epsilon_squared,0.026681753703513778,pequeno,1.0,False
+project_type,Tipo de projeto,median_recovery_hours,Recuperacao,Kruskal-Wallis,4,59,3.3614973321291473,0.33917466747718344,epsilon_squared,0.05795685055395081,pequeno,1.0,False

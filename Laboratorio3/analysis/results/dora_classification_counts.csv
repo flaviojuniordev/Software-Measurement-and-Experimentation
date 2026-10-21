@@ -1,0 +1,46 @@
+classification,category,count
+Deployment frequency,Low,90
+Deployment frequency,Medium,139
+Deployment frequency,High,64
+Deployment frequency,Elite,7
+Deployment frequency,Ausente,0
+Lead time,Low,94
+Lead time,Medium,87
+Lead time,High,71
+Lead time,Elite,48
+Lead time,Ausente,0
+CFR de CI,Low,18
+CFR de CI,Medium,5
+CFR de CI,High,41
+CFR de CI,Elite,236
+CFR de CI,Ausente,0
+Recuperacao,Low,10
+Recuperacao,Medium,35
+Recuperacao,High,167
+Recuperacao,Elite,69
+Recuperacao,Ausente,19
+Geral C1,Low,16
+Geral C1,Medium,135
+Geral C1,High,112
+Geral C1,Elite,18
+Geral C1,Ausente,19
+C1_ref_LT_release_CFR_CI,Low,16
+C1_ref_LT_release_CFR_CI,Medium,135
+C1_ref_LT_release_CFR_CI,High,112
+C1_ref_LT_release_CFR_CI,Elite,18
+C1_ref_LT_release_CFR_CI,Ausente,19
+C2_LT_commit_CFR_release,Low,45
+C2_LT_commit_CFR_release,Medium,171
+C2_LT_commit_CFR_release,High,62
+C2_LT_commit_CFR_release,Elite,2
+C2_LT_commit_CFR_release,Ausente,20
+C3_LT_commit_CFR_CI,Low,16
+C3_LT_commit_CFR_CI,Medium,127
+C3_LT_commit_CFR_CI,High,120
+C3_LT_commit_CFR_CI,Elite,18
+C3_LT_commit_CFR_CI,Ausente,19
+C4_LT_release_CFR_release,Low,36
+C4_LT_release_CFR_release,Medium,185
+C4_LT_release_CFR_release,High,57
+C4_LT_release_CFR_release,Elite,2
+C4_LT_release_CFR_release,Ausente,20
