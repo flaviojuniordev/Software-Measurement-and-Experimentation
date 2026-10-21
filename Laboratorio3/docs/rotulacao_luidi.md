@@ -1,6 +1,6 @@
 # Rotulacao independente de Luidi Cadete Silva
 
-Luidi Cadete Silva realizou uma classificacao independente da amostra-ouro, sem usar os
+Luidi realizou uma classificacao independente da amostra-ouro, sem usar os
 rotulos preenchidos por Flavio nem a saida da heuristica automatica como fonte
 de decisao. Os valores de Flavio so foram consultados depois da gravacao dos
 arquivos de Luidi Cadete Silva, e apenas para confirmar a compatibilidade estrutural.
@@ -17,7 +17,7 @@ Foram produzidos os seguintes artefatos:
 Os dois primeiros arquivos seguem o mesmo esquema minimo usado nas planilhas
 oficiais de Flavio. Os arquivos detalhados registram
 `evaluator=Luidi Cadete Silva` e `eligible_for_human_agreement=sim`, porque estes
-julgamentos foram feitos por Luidi Cadete Silva e correspondem a sua rotulacao
+julgamentos foram feitos por Luidi e correspondem a sua rotulacao
 humana independente.
 
 ## Criterios aplicados
@@ -36,8 +36,3 @@ O numero de versao foi usado apenas como evidencia contextual. Um incremento de
 patch, sozinho, nao determinou o rotulo. Foram lidas as release notes e as
 mensagens de commits armazenadas pela coleta para cada item sorteado.
 
-## Uso academico
-
-O documento oficial do Lab03 exige tres integrantes humanos para o kappa de
-Fleiss. Os arquivos registram a rotulacao humana independente de Luidi Cadete
-Silva e podem ser utilizados na comparacao entre avaliadores humanos.
